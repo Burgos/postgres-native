@@ -35,6 +35,14 @@ struct Message
             writeln("Length: ", len);
             writeln("Payload: ", payload);
         }
+
+        switch (tag)
+        {
+            case 'R':
+                AuthenticationMessage(this.payload);
+            default:
+                break;
+        }
     }
 
     /// sends startup packet to backend
@@ -68,6 +76,45 @@ struct Message
     }
 
     private ubyte[] payload;
+}
+
+struct AuthenticationMessage
+{
+    /// Indicates type of authentication
+    /// required/indicates success
+    static enum AuthFormat
+    {
+        /// Authentication OK
+        OK = 0,
+        /// Kerberos V5 required
+        KERBEROS = 2,
+        /// Clear-text password is required
+        CLEARTEXT = 3,
+        /// crypt()-encrypted password
+        CRYPTPASS = 4,
+        /// md5-encrypted password
+        MD5PASS = 5,
+        /// SCM credentials message is required
+        SCMCRED = 6
+    }
+
+    /// Salt to be used when encrypting password
+    ubyte[4] password_salt;
+
+    /// Type of encryption
+    AuthFormat format;
+
+    /// Constructs an auth. message from the given
+    /// payload
+    static AuthenticationMessage opCall (ubyte[] payload)
+    {
+        AuthenticationMessage msg;
+        msg.format = cast(AuthFormat)bigEndianToNative!(int, int.sizeof)(payload[0..int.sizeof]);
+
+        writeln("Format: ", msg.format);
+
+        return msg;
+    }
 }
 
 void main()
