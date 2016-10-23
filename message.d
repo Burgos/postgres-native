@@ -51,9 +51,9 @@ struct Message
     void sendStartup (ref Connection c, string database, string username)
     {
         payload.length = 0;
-        auto app = appender(&payload);
-
-        app.put(nativeToBigEndian(cast(int)0)[]); // dummy length
+        auto app = appender(&this.payload);
+        // dummy length
+        app.append(0);
 
         ushort protocol_major = 3;
         ushort protocol_minor = 0;
@@ -61,17 +61,17 @@ struct Message
         int protocol = ~0;
         protocol &= protocol_major << 16 | protocol_minor;
 
-        app.put(nativeToBigEndian(protocol)[]); // protocol
+        app.append(protocol);
         app.put(cast(ubyte[])"database");
-        app.put(cast(ubyte)0);
+        app.append(cast(ubyte)0);
         app.put(cast(ubyte[])database);
-        app.put(cast(ubyte)0);
+        app.append(cast(ubyte)0);
         app.put(cast(ubyte[])"user");
-        app.put(cast(ubyte)0);
+        app.append(cast(ubyte)0);
         app.put(cast(ubyte[])username);
-        app.put(cast(ubyte)0);
-        app.put(cast(ubyte)0);
-        payload[0..int.sizeof] = nativeToBigEndian(cast(int)payload.length);
+        app.append(cast(ubyte)0);
+        app.append(cast(ubyte)0);
+        payload.write!int(cast(int)this.payload.length, 0);
         debug (verbose) writeln("Payload: ", payload);
         c.send(payload);
 
