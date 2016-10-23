@@ -41,7 +41,7 @@ struct Message
         {
             case 'R':
                 auto msg = AuthenticationMessage(this.payload);
-                debug (verbose) writefln("salt: %(%x%), type: %s", msg.password_salt, msg.format);
+                debug (verbose) writefln("salt: %x, type: %s", msg.salt.md5_salt, msg.format);
             default:
                 break;
         }
@@ -101,7 +101,13 @@ struct AuthenticationMessage
     }
 
     /// Salt to be used when encrypting password
-    ubyte[4] password_salt;
+    union Salt
+    {
+        ushort crypt_salt;
+        uint md5_salt;
+    }
+
+    Salt salt;
 
     /// Type of encryption
     AuthFormat format;
@@ -111,18 +117,15 @@ struct AuthenticationMessage
     static AuthenticationMessage opCall(Range)(Range payload)
     {
         AuthenticationMessage msg;
-        ubyte[int.sizeof] int_buf;
-        int_buf[] = payload.take(int.sizeof)[];
-        payload = payload.drop(int.sizeof);
-        msg.format = cast(AuthFormat)bigEndianToNative!int(int_buf);
+        msg.format = cast(AuthFormat)read!int(payload);
 
         with (AuthFormat) switch (msg.format)
         {
             case CRYPTPASS:
-                msg.password_salt[0..2] = payload.take(2);
+                msg.salt.crypt_salt = read!ushort(payload);
                 break;
             case MD5PASS:
-                msg.password_salt[] = payload.take(4);
+                msg.salt.md5_salt = read!uint(payload);
                 break;
             case CLEARTEXT:
             case OK:
