@@ -108,12 +108,28 @@ struct AuthenticationMessage
 
     /// Constructs an auth. message from the given
     /// payload
-    static AuthenticationMessage opCall (ubyte[] payload)
+    static AuthenticationMessage opCall(Range)(Range payload)
     {
         AuthenticationMessage msg;
-        msg.format = cast(AuthFormat)bigEndianToNative!(int, int.sizeof)(payload[0..int.sizeof]);
+        ubyte[int.sizeof] int_buf;
+        int_buf[] = payload.take(int.sizeof)[];
+        payload = payload.drop(int.sizeof);
+        msg.format = cast(AuthFormat)bigEndianToNative!int(int_buf);
 
-        writeln("Format: ", msg.format);
+        with (AuthFormat) switch (msg.format)
+        {
+            case CRYPTPASS:
+                msg.password_salt[0..2] = payload.take(2);
+                break;
+            case MD5PASS:
+                msg.password_salt[] = payload.take(4);
+                break;
+            case CLEARTEXT:
+            case OK:
+                break;
+            default:
+                throw new Exception("Auth format " ~ to!(string)(msg.format) ~ " not supported.");
+        }
 
         return msg;
     }
