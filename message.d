@@ -4,6 +4,7 @@ module message;
 import connection;
 
 import std.range;
+import std.conv;
 import std.array;
 import std.bitmanip;
 
@@ -33,13 +34,14 @@ struct Message
         {
             writeln("Tag: ", tag);
             writeln("Length: ", len);
-            writeln("Payload: ", payload);
+            writefln("Payload: %(%x, %)", payload);
         }
 
         switch (tag)
         {
             case 'R':
-                AuthenticationMessage(this.payload);
+                auto msg = AuthenticationMessage(this.payload);
+                debug (verbose) writefln("salt: %(%x%), type: %s", msg.password_salt, msg.format);
             default:
                 break;
         }
@@ -70,7 +72,7 @@ struct Message
         app.put(cast(ubyte)0);
         app.put(cast(ubyte)0);
         payload[0..int.sizeof] = nativeToBigEndian(cast(int)payload.length);
-        writeln("Payload: ", payload);
+        debug (verbose) writeln("Payload: ", payload);
         c.send(payload);
 
     }
