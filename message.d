@@ -49,7 +49,7 @@ struct Message
     }
 
     /// sends startup packet to backend
-    void sendStartup (ref Connection c, string database, string username)
+    void sendStartup (ref Connection c, string database)
     {
         ushort protocol_major = 3;
         ushort protocol_minor = 0;
@@ -61,7 +61,7 @@ struct Message
                 char.init, // startup message, no type
                 protocol,
                 "database", database,
-                "user", username);
+                "user", c.username);
 
         debug (verbose) writeln("Payload: ", payload);
         c.send(payload);
@@ -183,10 +183,10 @@ void main()
 {
     // try to connect to the
     // postgres, and see what we have
-    auto conn = Connection("127.0.0.1", 5432);
+    auto conn = Connection("127.0.0.1", 5432, "burgos");
     conn.connect();
 
     Message m;
-    m.sendStartup(conn, "test", "burgos");
+    m.sendStartup(conn, "test");
     m.receiveOne(conn);
 }

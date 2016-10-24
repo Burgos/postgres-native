@@ -13,6 +13,9 @@ struct Connection
     /// remote server address
     private Address address;
 
+    /// Username used to connect
+    public string username;
+
     @disable this();
 
     /// Creates the connection object.
@@ -21,9 +24,11 @@ struct Connection
     ///     port = remote port of the server
     ///     family = address family of the connection
     public this (string address, ushort port,
+            string username,
             AddressFamily family = AddressFamily.INET)
     {
         this.sock = new Socket(family, SocketType.STREAM);
+        this.username = username;
 
         if (family == AddressFamily.INET)
         {
