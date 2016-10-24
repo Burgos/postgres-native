@@ -1,0 +1,6 @@
+name "postgres-native"
+description "A native Postgresql client written in D"
+copyright "Copyright (c) 2016 Nemanja Boric"
+authors "Nemanja Boric"
+licence "mit"
+targetPath "bin"
