@@ -44,6 +44,16 @@ struct Message
                 auto msg = AuthenticationMessage(this.payload);
                 debug (verbose) writefln("salt: [%(%x %)], type: %s", msg.salt.md5_salt, msg.format);
 
+                if (msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
+                {
+                    // respond with password
+                    auto data = Md5PasswordMessage(this.payload, c.username, "test-pass",
+                            msg.salt.md5_salt);
+
+                    debug (verbose) writefln("passwd: %( %x, %)", data);
+                    c.send(data);
+                }
+
             default:
                 break;
         }
