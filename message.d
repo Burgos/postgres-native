@@ -7,6 +7,7 @@ import std.range;
 import std.conv;
 import std.array;
 import std.bitmanip;
+import std.string;
 
 debug (verbose) import std.stdio;
 
@@ -62,15 +63,18 @@ struct Message
         protocol &= protocol_major << 16 | protocol_minor;
 
         app.append(protocol);
-        app.put(cast(ubyte[])"database");
+        app.put("database".representation);
         app.append(cast(ubyte)0);
-        app.put(cast(ubyte[])database);
+        app.put(database.representation);
         app.append(cast(ubyte)0);
-        app.put(cast(ubyte[])"user");
+        app.put("user".representation);
         app.append(cast(ubyte)0);
-        app.put(cast(ubyte[])username);
+        app.put(username.representation);
         app.append(cast(ubyte)0);
+        // Final 0 terminator
         app.append(cast(ubyte)0);
+
+        // Set the payload length
         payload.write!int(cast(int)this.payload.length, 0);
         debug (verbose) writeln("Payload: ", payload);
         c.send(payload);
