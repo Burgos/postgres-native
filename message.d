@@ -51,34 +51,65 @@ struct Message
     /// sends startup packet to backend
     void sendStartup (ref Connection c, string database, string username)
     {
-        payload.length = 0;
-        auto app = appender(&this.payload);
-        // dummy length
-        app.append(0);
-
         ushort protocol_major = 3;
         ushort protocol_minor = 0;
 
         int protocol = ~0;
         protocol &= protocol_major << 16 | protocol_minor;
 
-        app.append(protocol);
-        app.put("database".representation);
-        app.append(cast(ubyte)0);
-        app.put(database.representation);
-        app.append(cast(ubyte)0);
-        app.put("user".representation);
-        app.append(cast(ubyte)0);
-        app.put(username.representation);
-        app.append(cast(ubyte)0);
-        // Final 0 terminator
-        app.append(cast(ubyte)0);
+        this.payload = this.constructMessage(this.payload,
+                char.init, // startup message, no type
+                protocol,
+                "database", database,
+                "user", username);
 
-        // Set the payload length
-        payload.write!int(cast(int)this.payload.length, 0);
         debug (verbose) writeln("Payload: ", payload);
         c.send(payload);
 
+    }
+
+    /// Packs the message ready for send into an provided array
+    /// It sets the message inside the frame in a way that
+    /// all provided arguments are put, with endianess being
+    /// important, and then it sets the first 4 bytes to the
+    /// message length.
+    /// Params:
+    ///     buf = buffer to fill
+    ///     type = message type (0 for no type)
+    ///     args = args to pack
+    ubyte[] constructMessage(Args...)(ref ubyte[] buf, char type, Args args)
+    {
+        buf.length = 0;
+        auto app = appender(&buf);
+
+        // message type
+        if (type != char.init)
+        {
+            app.append(type);
+        }
+
+        // dummy length
+        app.append(cast(int)0);
+
+        foreach (param; args)
+        {
+            static if (is(typeof(param) == string))
+            {
+                app.put(param.representation);
+                app.append(cast(ubyte)0);
+            }
+            else
+            {
+                app.append(param);
+            }
+        }
+
+        // final terminator
+        app.append(cast(ubyte)0);
+
+        // set the payload length
+        buf.write!int(cast(int)(buf.length - (type != char.init ? char.sizeof : 0)), 0);
+        return buf;
     }
 
     private ubyte[] payload;
