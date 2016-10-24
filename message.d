@@ -77,8 +77,10 @@ struct Message
     ///     buf = buffer to fill
     ///     type = message type (0 for no type)
     ///     args = args to pack
-    ubyte[] constructMessage(Args...)(ref ubyte[] buf, char type, Args args)
+    static ubyte[] constructMessage(Args...)(ref ubyte[] buf, char type, Args args)
     {
+        import std.traits;
+
         buf.length = 0;
         auto app = appender(&buf);
 
@@ -98,6 +100,10 @@ struct Message
                 app.put(param.representation);
                 app.append(cast(ubyte)0);
             }
+            else static if (isArray!(typeof(param)))
+            {
+                app ~= cast(ubyte[])param;
+            }
             else
             {
                 app.append(param);
@@ -108,12 +114,12 @@ struct Message
         app.append(cast(ubyte)0);
 
         // set the payload length
-        buf.write!int(cast(int)(buf.length - (type != char.init ? char.sizeof : 0)), 0);
+        buf.write!int(cast(int)(buf.length - (type != char.init ? char.sizeof : 0)),
+                (type != char.init ? 1 : 0));
         return buf;
     }
 
-    private ubyte[] payload;
-}
+    private ubyte[] payload; }
 
 struct AuthenticationMessage
 {
