@@ -19,7 +19,7 @@ debug (verbose) import std.stdio;
 struct Message
 {
     /// Receives a message from the server
-    private void receiveOne (ref Connection c)
+    public void receiveOne (ref Connection c)
     {
         // Read tag, length and then payload
         char tag;
@@ -53,6 +53,7 @@ struct Message
                     debug (verbose) writefln("passwd: %( %x, %)", data);
                     c.send(data);
                 }
+                break;
 
             default:
                 break;
@@ -227,16 +228,4 @@ struct Md5PasswordMessage
 
         assert (buf == expected);
     }
-}
-
-void main()
-{
-    // try to connect to the
-    // postgres, and see what we have
-    auto conn = Connection("127.0.0.1", 5432, "burgos");
-    conn.connect();
-
-    Message m;
-    m.sendStartup(conn, "test");
-    m.receiveOne(conn);
 }
