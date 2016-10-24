@@ -180,6 +180,45 @@ struct AuthenticationMessage
     }
 }
 
+/// md5 password message
+struct Md5PasswordMessage
+{
+
+    /// Constructs a MD5 password responde message
+    /// using the given password and salt
+    static ubyte[] opCall(ref ubyte[] buf, string username, string password, int salt)
+    {
+        return Md5PasswordMessage(buf, username, password, (cast(ubyte*)&salt)[0..int.sizeof]);
+    }
+
+    static ubyte[] opCall(ref ubyte[] buf, string username, string password, ubyte[] salt)
+    {
+        char[32 + 3] hash_buf; // md5+password string
+
+        import std.digest.md;
+        hash_buf[0..3] = "md5";
+        hash_buf[3..$] = md5Of(
+                    md5Of(password, username).toHexString!(LetterCase.lower), salt
+                ).toHexString!(LetterCase.lower);
+
+        Message.constructMessage(buf, 'p', hash_buf[]);
+        return buf;
+    }
+
+    unittest
+    {
+        ubyte[] buf;
+        Md5PasswordMessage(buf, "burgos", "test-pass", [0x91, 0x47, 0x28, 0x72]);
+
+        ubyte[] expected = [0x70, 0x00, 0x00, 0x00, 0x28, 0x6d, 0x64, 0x35,
+            0x37, 0x35, 0x33, 0x65, 0x62, 0x31, 0x64, 0x31, 0x36, 0x38, 0x39,
+            0x32, 0x32, 0x32, 0x35, 0x37, 0x37, 0x39, 0x31, 0x32, 0x35, 0x63,
+            0x32, 0x39, 0x66, 0x39, 0x62, 0x30, 0x32, 0x34, 0x37, 0x64, 0x00];
+
+        assert (buf == expected);
+    }
+}
+
 void main()
 {
     // try to connect to the
