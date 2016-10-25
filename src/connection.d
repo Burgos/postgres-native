@@ -99,22 +99,25 @@ struct Connection
         enforce(auth_msg !is null, "Expected authentication message");
         this.state = State.AUTHENTICATING;
 
-        if (auth_msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
+        if (auth_msg.format != AuthenticationMessage.AuthFormat.OK)
         {
-            this.send(Md5PasswordMessage(this.payload, this.username,
-                        this.password, auth_msg.salt.md5_salt));
-        }
-        else
-        {
-            enforce(false, "We support only MD5 for the moment");
-        }
+            if (auth_msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
+            {
+                this.send(Md5PasswordMessage(this.payload, this.username,
+                            this.password, auth_msg.salt.md5_salt));
+            }
+            else
+            {
+                enforce(false, "We support only MD5 for the moment");
+            }
 
-        response = msg.receiveOne(this);
-        auth_msg = response.peek!(AuthenticationMessage);
-        enforce(auth_msg !is null, "Expected authentication message");
+            response = msg.receiveOne(this);
+            auth_msg = response.peek!(AuthenticationMessage);
+            enforce(auth_msg !is null, "Expected authentication message");
 
-        enforce(auth_msg.format == AuthenticationMessage.AuthFormat.OK,
-                "Failed to authenticate");
+            enforce(auth_msg.format == AuthenticationMessage.AuthFormat.OK,
+                    "Failed to authenticate");
+        }
 
         this.state = State.AUTHENTICATED;
         debug (verbose) writeln("Authenticated");
