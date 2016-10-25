@@ -41,13 +41,6 @@ struct Message
         payload.length = len - len.sizeof;
         c.receive(payload);
 
-        debug (verbose)
-        {
-            writeln("Tag: ", tag);
-            writeln("Length: ", len);
-            writefln("Payload: %(%x, %)", payload);
-        }
-
         switch (tag)
         {
             case 'R':
@@ -57,7 +50,14 @@ struct Message
                 break;
 
             default:
-                break;
+                enforce(false, "Unexpected message: " ~ to!string(cast(int)tag));
+        }
+
+        debug (verbose)
+        {
+            writeln("Tag: ", tag);
+            writeln("Length: ", len);
+            writefln("Payload: %(%x, %)", payload);
         }
 
         return ret;
