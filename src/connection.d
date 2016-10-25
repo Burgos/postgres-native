@@ -1,8 +1,11 @@
 module connection;
 
+import message;
+
 import std.bitmanip;
 import std.socket;
 import std.stdio;
+import std.exception;
 
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
@@ -16,6 +19,12 @@ struct Connection
     /// Username used to connect
     public string username;
 
+    /// Password used to connect
+    public string password;
+
+    /// Database to connect to
+    public string database;
+
     /// state of the connection
     enum State
     {
@@ -25,7 +34,11 @@ struct Connection
         READY_FOR_QUERY
     }
 
+    /// ditto
     public State state;
+
+    /// message construction buffer
+    private ubyte[] payload;
 
     @disable this();
 
@@ -33,13 +46,19 @@ struct Connection
     /// Params:
     ///     address = address of the server
     ///     port = remote port of the server
+    ///     username = user name to connect with
+    ///     password = password to connect with
+    ///     database = database to connect to
     ///     family = address family of the connection
     public this (string address, ushort port,
-            string username,
+            string username, string password,
+            string database,
             AddressFamily family = AddressFamily.INET)
     {
         this.sock = new Socket(family, SocketType.STREAM);
         this.username = username;
+        this.password = password;
+        this.database = database;
 
         if (family == AddressFamily.INET)
         {
@@ -61,7 +80,38 @@ struct Connection
         this.sock.close();
     }
 
+    /// Starts the communication with the server.
+    /// Authenticates and waits for server to say
+    /// that's it's ready for query
+    /// TODO: should cover 'E' responses
     public void connect()
+    {
+        enforce(this.state == State.init, "Connection already initialized");
+        this.connect_socket();
+
+        Message msg;
+
+        // send startup message and wait for the response
+        this.send(msg.sendStartup(this.database, this.username));
+        auto response = msg.receiveOne(this);
+
+        auto auth_msg = response.peek!(AuthenticationMessage);
+        enforce(auth_msg !is null, "Expected authentication message");
+        this.state = State.AUTHENTICATING;
+
+        if (auth_msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
+        {
+            this.send(Md5PasswordMessage(this.payload, this.username,
+                        this.password, auth_msg.salt.md5_salt));
+        }
+        else
+        {
+            enforce(false, "We support only MD5 for the moment");
+        }
+    }
+
+    /// TODO: move these low-level communication into a substruct
+    private void connect_socket()
     in
     {
         assert(this.address !is null);

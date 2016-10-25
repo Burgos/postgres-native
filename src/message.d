@@ -18,9 +18,19 @@ debug (verbose) import std.stdio;
 /// and over again, without no need for realloc
 struct Message
 {
+    import std.variant;
+    import std.meta;
+
+    alias MessageTypes = AliasSeq!(AuthenticationMessage);
+
+    alias VariantN!(maxSize!MessageTypes,
+            MessageTypes) ParsedMessage;
+
     /// Receives a message from the server
-    public void receiveOne (ref Connection c)
+    public ParsedMessage receiveOne (ref Connection c)
     {
+        ParsedMessage ret;
+
         // Read tag, length and then payload
         char tag;
         c.receive(tag);
@@ -43,25 +53,18 @@ struct Message
             case 'R':
                 auto msg = AuthenticationMessage(this.payload);
                 debug (verbose) writefln("salt: [%(%x %)], type: %s", msg.salt.md5_salt, msg.format);
-
-                if (msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
-                {
-                    // respond with password
-                    auto data = Md5PasswordMessage(this.payload, c.username, "test-pass",
-                            msg.salt.md5_salt);
-
-                    debug (verbose) writefln("passwd: %( %x, %)", data);
-                    c.send(data);
-                }
+                ret = msg;
                 break;
 
             default:
                 break;
         }
+
+        return ret;
     }
 
     /// sends startup packet to backend
-    void sendStartup (ref Connection c, string database)
+    ubyte[] sendStartup (string database, string username)
     {
         ushort protocol_major = 3;
         ushort protocol_minor = 0;
@@ -73,11 +76,10 @@ struct Message
                 char.init, // startup message, no type
                 protocol,
                 "database", database,
-                "user", c.username);
+                "user", username);
 
         debug (verbose) writeln("Payload: ", payload);
-        c.send(payload);
-
+        return this.payload;
     }
 
     /// Packs the message ready for send into an provided array
