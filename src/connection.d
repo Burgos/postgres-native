@@ -133,7 +133,11 @@ struct Connection
     body
     {
         this.sock.connect(this.address);
-        this.sock.setKeepAlive(5, 5);
+        // not supported on OSX
+        version (linux)
+        {
+            this.sock.setKeepAlive(5, 5);
+        }
     }
 
     public ptrdiff_t receive (void[] buf)
