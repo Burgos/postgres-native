@@ -108,6 +108,17 @@ struct Connection
         {
             enforce(false, "We support only MD5 for the moment");
         }
+
+        response = msg.receiveOne(this);
+        auth_msg = response.peek!(AuthenticationMessage);
+        enforce(auth_msg !is null, "Expected authentication message");
+
+        enforce(auth_msg.format == AuthenticationMessage.AuthFormat.OK,
+                "Failed to authenticate");
+
+        this.state = State.AUTHENTICATED;
+        debug (verbose) writeln("Authenticated");
+
     }
 
     /// TODO: move these low-level communication into a substruct
