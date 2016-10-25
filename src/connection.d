@@ -122,6 +122,12 @@ struct Connection
         this.state = State.AUTHENTICATED;
         debug (verbose) writeln("Authenticated");
 
+        // read any status messages
+        do
+        {
+            response = msg.receiveOne(this);
+        }
+        while (!this.state != State.READY_FOR_QUERY);
     }
 
     /// TODO: move these low-level communication into a substruct
