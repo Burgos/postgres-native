@@ -20,8 +20,10 @@ struct Message
 {
     import std.variant;
     import std.meta;
+    import std.exception;
 
-    alias MessageTypes = AliasSeq!(AuthenticationMessage);
+    alias MessageTypes = AliasSeq!(AuthenticationMessage,
+            ParameterStatusMessage);
 
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
@@ -46,6 +48,10 @@ struct Message
             case 'R':
                 auto msg = AuthenticationMessage(this.payload);
                 debug (verbose) writefln("salt: [%(%x %)], type: %s", msg.salt.md5_salt, msg.format);
+                ret = msg;
+                break;
+            case 'S':
+                auto msg = ParameterStatusMessage(this.payload);
                 ret = msg;
                 break;
 
@@ -229,5 +235,28 @@ struct Md5PasswordMessage
             0x32, 0x39, 0x66, 0x39, 0x62, 0x30, 0x32, 0x34, 0x37, 0x64, 0x00];
 
         assert (buf == expected);
+    }
+}
+
+/// parameter status
+struct ParameterStatusMessage
+{
+    /// name of the parameter
+    public string name;
+
+    /// value of the parameter
+    public string value;
+
+    /// generates parameter status message
+    /// out of payload
+    static ParameterStatusMessage opCall(Range)(Range payload)
+    {
+        import std.algorithm.iteration: splitter;
+        typeof(this) msg;
+        auto params = splitter(payload, cast(ubyte)0);
+        msg.name = to!(string)(cast(char[])(params.take(1).array[0]));
+        msg.value = to!(string)(cast(char[])(params.drop(1).take(1).array[0]));
+        debug (verbose) writeln("name: ", msg.name, " value: ", msg.value);
+        return msg;
     }
 }
