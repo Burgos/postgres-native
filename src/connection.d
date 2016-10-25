@@ -16,6 +16,17 @@ struct Connection
     /// Username used to connect
     public string username;
 
+    /// state of the connection
+    enum State
+    {
+        INITIALIZING,
+        AUTHENTICATING,
+        AUTHENTICATED,
+        READY_FOR_QUERY
+    }
+
+    public State state;
+
     @disable this();
 
     /// Creates the connection object.
