@@ -23,7 +23,8 @@ struct Message
     import std.exception;
 
     alias MessageTypes = AliasSeq!(AuthenticationMessage,
-            ParameterStatusMessage);
+            ParameterStatusMessage, BackendKeyDataMessage,
+            ReadyForQueryMessage);
 
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
@@ -56,6 +57,9 @@ struct Message
                 break;
             case 'K':
                 ret = BackendKeyDataMessage(this.payload);
+                break;
+            case 'Z':
+                ret = ReadyForQueryMessage(this.payload);
                 break;
 
             default:
@@ -283,6 +287,26 @@ struct BackendKeyDataMessage
 
         debug (verbose) writeln("process id: ", msg.process_id,
                 " secret key: ", msg.key);
+
+        return msg;
+    }
+}
+
+/// ready for query
+struct ReadyForQueryMessage
+{
+    /// transaction status indicator
+    /// TODO: make enum
+    public char transaction_status;
+
+    /// generates parameter status message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+
+        msg.transaction_status = read!char(payload);
+        debug (verbose) writeln("transaction status: ", msg.transaction_status);
 
         return msg;
     }
