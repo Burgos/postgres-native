@@ -54,6 +54,9 @@ struct Message
                 auto msg = ParameterStatusMessage(this.payload);
                 ret = msg;
                 break;
+            case 'K':
+                ret = BackendKeyDataMessage(this.payload);
+                break;
 
             default:
                 enforce(false, "Unexpected message: " ~ to!string(cast(int)tag));
@@ -257,6 +260,30 @@ struct ParameterStatusMessage
         msg.name = to!(string)(cast(char[])(params.take(1).array[0]));
         msg.value = to!(string)(cast(char[])(params.drop(1).take(1).array[0]));
         debug (verbose) writeln("name: ", msg.name, " value: ", msg.value);
+        return msg;
+    }
+}
+
+/// backend key data
+struct BackendKeyDataMessage
+{
+    /// process id of this backend
+    public int process_id;
+
+    /// the secret key of this backend
+    public int key;
+
+    /// generates parameter status message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+        msg.process_id = read!int(payload);
+        msg.key = read!int(payload);
+
+        debug (verbose) writeln("process id: ", msg.process_id,
+                " secret key: ", msg.key);
+
         return msg;
     }
 }
