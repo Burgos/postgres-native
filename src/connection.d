@@ -126,8 +126,13 @@ struct Connection
         do
         {
             response = msg.receiveOne(this);
+            if (response.peek!(ReadyForQueryMessage))
+            {
+                this.state = State.READY_FOR_QUERY;
+                debug (verbose) writeln("Ready for query");
+            }
         }
-        while (!this.state != State.READY_FOR_QUERY);
+        while (this.state != State.READY_FOR_QUERY);
     }
 
     /// TODO: move these low-level communication into a substruct
