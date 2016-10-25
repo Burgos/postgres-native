@@ -38,7 +38,7 @@ struct Message
         c.receive(len);
 
         // Receive payload
-        payload.length = len;
+        payload.length = len - len.sizeof;
         c.receive(payload);
 
         debug (verbose)
