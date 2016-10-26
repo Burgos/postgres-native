@@ -375,10 +375,7 @@ struct ErrorMessage
 
         foreach (type, value; info)
         {
-            app ~= format("%s", type);
-            app ~= ": ";
-            app ~= value;
-            app ~= "\n";
+            app ~= format("%s: %s\n", type, value);
         }
 
         return app.data;
