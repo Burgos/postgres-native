@@ -182,9 +182,9 @@ struct AuthenticationMessage
 
     /// Constructs an auth. message from the given
     /// payload
-    static AuthenticationMessage opCall(Range)(Range payload)
+    static auto opCall(Range)(Range payload)
     {
-        AuthenticationMessage msg;
+        typeof(this) msg;
         msg.format = cast(AuthFormat)read!int(payload);
 
         with (AuthFormat) switch (msg.format)
@@ -256,7 +256,7 @@ struct ParameterStatusMessage
 
     /// generates parameter status message
     /// out of payload
-    static ParameterStatusMessage opCall(Range)(Range payload)
+    static auto opCall(Range)(Range payload)
     {
         import std.algorithm.iteration: splitter;
         typeof(this) msg;
