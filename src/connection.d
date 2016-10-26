@@ -80,6 +80,16 @@ struct Connection
         this.sock.close();
     }
 
+    Message.ParsedMessage handleError (Message.ParsedMessage msg)
+    {
+        if (auto error = msg.peek!(ErrorMessage))
+        {
+            throw new Exception(error.toString());
+        }
+
+        return msg;
+    }
+
     /// Starts the communication with the server.
     /// Authenticates and waits for server to say
     /// that's it's ready for query
@@ -111,7 +121,7 @@ struct Connection
                 enforce(false, "We support only MD5 for the moment");
             }
 
-            response = msg.receiveOne(this);
+            response = handleError(msg.receiveOne(this));
             auth_msg = response.peek!(AuthenticationMessage);
             enforce(auth_msg !is null, "Expected authentication message");
 
@@ -125,7 +135,7 @@ struct Connection
         // read any status messages
         do
         {
-            response = msg.receiveOne(this);
+            response = handleError(msg.receiveOne(this));
             if (response.peek!(ReadyForQueryMessage))
             {
                 this.state = State.READY_FOR_QUERY;
