@@ -369,12 +369,13 @@ struct ErrorMessage
     /// provides text representation
     public string toString()
     {
+        import std.format;
         auto app = appender!string;
         app ~= "Error: \n";
 
         foreach (type, value; info)
         {
-            app ~= type;
+            app ~= format("%s", type);
             app ~= ": ";
             app ~= value;
             app ~= "\n";
