@@ -24,7 +24,7 @@ struct Message
 
     alias MessageTypes = AliasSeq!(AuthenticationMessage,
             ParameterStatusMessage, BackendKeyDataMessage,
-            ReadyForQueryMessage);
+            ReadyForQueryMessage, ErrorMessage);
 
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
@@ -60,6 +60,9 @@ struct Message
                 break;
             case 'Z':
                 ret = ReadyForQueryMessage(this.payload);
+                break;
+            case 'E':
+                ret = ErrorMessage(this.payload);
                 break;
 
             default:
@@ -309,5 +312,74 @@ struct ReadyForQueryMessage
         debug (verbose) writeln("transaction status: ", msg.transaction_status);
 
         return msg;
+    }
+}
+
+
+/// error message
+struct ErrorMessage
+{
+    enum FieldType: char
+    {
+        SEVERITY = 'S',
+        CODE = 'C',
+        MESSAGE = 'M',
+        DETAIL = 'D',
+        HINT = 'H',
+        POSITION = 'P',
+        INTERNAL_POSITION = 'p',
+        INTERNAL_QUERY = 'q',
+        SCHEMA_NAME = 's',
+        TABLE_NAME = 't',
+        COLUMN_NAME = 'c',
+        DATA_TYPE = 'd',
+        CONSTRAINT = 'n',
+        FILE = 'F',
+        LINE = 'L',
+        ROUTINE = 'R',
+    }
+
+    /// information about error
+    public string[FieldType] info;
+
+    /// generates error message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        import std.algorithm.iteration: splitter;
+        typeof(this) msg;
+
+        // split the error message
+        // into range of TSTR\0
+        auto params = splitter(payload, cast(ubyte)0);
+
+        foreach (param; params)
+        {
+            if (param.empty)
+                break;
+
+            auto type = read!char(param);
+            auto value = to!string(cast(char[])param.array);
+            msg.info[to!FieldType(type)] = value;
+        }
+
+        return msg;
+    }
+
+    /// provides text representation
+    public string toString()
+    {
+        auto app = appender!string;
+        app ~= "Error: \n";
+
+        foreach (type, value; info)
+        {
+            app ~= type;
+            app ~= ": ";
+            app ~= value;
+            app ~= "\n";
+        }
+
+        return app.data;
     }
 }
