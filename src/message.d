@@ -44,30 +44,15 @@ struct Message
         payload.length = len - len.sizeof;
         c.receive(payload);
 
-        switch (tag)
+        foreach (msg_type; MessageTypes)
         {
-            case 'R':
-                auto msg = AuthenticationMessage(this.payload);
-                debug (verbose) writefln("salt: [%(%x %)], type: %s", msg.salt.md5_salt, msg.format);
-                ret = msg;
-                break;
-            case 'S':
-                auto msg = ParameterStatusMessage(this.payload);
-                ret = msg;
-                break;
-            case 'K':
-                ret = BackendKeyDataMessage(this.payload);
-                break;
-            case 'Z':
-                ret = ReadyForQueryMessage(this.payload);
-                break;
-            case 'E':
-                ret = ErrorMessage(this.payload);
-                break;
-
-            default:
-                enforce(false, "Unexpected message: " ~ to!string(cast(int)tag));
+            if (tag == msg_type.Tag)
+            {
+                ret = msg_type(this.payload);
+            }
         }
+
+        enforce(ret.hasValue, "Unexpected message: " ~ to!string(cast(int)tag));
 
         debug (verbose)
         {
