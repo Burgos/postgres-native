@@ -153,6 +153,10 @@ struct Message
 
 struct AuthenticationMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'R';
+
     /// Indicates type of authentication
     /// required/indicates success
     static enum AuthFormat
@@ -212,6 +216,9 @@ struct AuthenticationMessage
 /// md5 password message
 struct Md5PasswordMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'p';
 
     /// Constructs a MD5 password responde message
     /// using the given password and salt
@@ -230,7 +237,7 @@ struct Md5PasswordMessage
                     md5Of(password, username).toHexString!(LetterCase.lower), salt
                 ).toHexString!(LetterCase.lower);
 
-        Message.constructMessage(buf, 'p', hash_buf[]);
+        Message.constructMessage(buf, Tag, hash_buf[]);
         return buf;
     }
 
@@ -251,6 +258,10 @@ struct Md5PasswordMessage
 /// parameter status
 struct ParameterStatusMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'S';
+
     /// name of the parameter
     public string name;
 
@@ -274,6 +285,10 @@ struct ParameterStatusMessage
 /// backend key data
 struct BackendKeyDataMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'K';
+
     /// process id of this backend
     public int process_id;
 
@@ -298,6 +313,10 @@ struct BackendKeyDataMessage
 /// ready for query
 struct ReadyForQueryMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'Z';
+
     /// transaction status indicator
     /// TODO: make enum
     public char transaction_status;
@@ -319,6 +338,10 @@ struct ReadyForQueryMessage
 /// error message
 struct ErrorMessage
 {
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'E';
+
     enum FieldType: char
     {
         SEVERITY = 'S',
