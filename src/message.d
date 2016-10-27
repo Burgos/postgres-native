@@ -26,6 +26,16 @@ struct Message
             ParameterStatusMessage, BackendKeyDataMessage,
             ReadyForQueryMessage, ErrorMessage);
 
+    /// Helper template to get the message type from a message
+    template GetMessageTag(Message)
+    {
+        alias GetMessageTag = Message.Tag;
+    }
+
+    // make sure all tags are unique at compile time
+    static assert (MessageTypes.length ==
+        NoDuplicates!(staticMap!(GetMessageTag, MessageTypes)).length);
+
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
 
