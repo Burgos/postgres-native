@@ -36,6 +36,7 @@ struct Message
     static assert (MessageTypes.length ==
         NoDuplicates!(staticMap!(GetMessageTag, MessageTypes)).length);
 
+    /// Return value - variant able to hold all possible messages
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
 
