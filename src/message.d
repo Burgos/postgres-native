@@ -31,7 +31,8 @@ struct Message
 
     // make sure all tags are unique at compile time
     static assert (MessageTypes.length ==
-        NoDuplicates!(staticMap!(MessageTag, MessageTypes)).length);
+        NoDuplicates!(staticMap!(MessageTag, MessageTypes)).length,
+        "Make sure all Message types contain exactly one distinct tag.");
 
     /// Return value - variant able to hold all possible messages
     alias VariantN!(maxSize!MessageTypes,
