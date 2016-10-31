@@ -20,14 +20,29 @@ struct Message
 {
     import std.variant;
     import std.meta;
+    import std.traits;
     import std.exception;
-
-    alias MessageTypes = AliasSeq!(AuthenticationMessage,
-            ParameterStatusMessage, BackendKeyDataMessage,
-            ReadyForQueryMessage, ErrorMessage);
 
     /// Helper template to get the message type from a message
     enum MessageTag(MessageType) = MessageType.Tag;
+
+    /// Identity template, used to get away with __traits in
+    /// getMessageStruct:
+    //// Basic type expected, not __traits
+    alias Identity(alias X) = X;
+
+    /// Gets the message struct from the string
+    alias getMessageStruct (alias S) =
+        Identity!(__traits(getMember, message, S));
+
+    /// Checks if the struct is tagged with a field
+    /// named Tag
+    enum hasMessageTag(alias S) =
+        is (typeof(MessageTag!(__traits(getMember, message, S))));
+
+    /// List of all message types
+    alias MessageTypes = staticMap!(getMessageStruct,
+            Filter!(hasMessageTag, aliasSeqOf!([__traits(allMembers, message)])));
 
     // make sure all tags are unique at compile time
     static assert (MessageTypes.length ==
@@ -233,6 +248,14 @@ struct Md5PasswordMessage
 
         Message.constructMessage(buf, Tag, hash_buf[]);
         return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing Md5PasswordMessage is not supported");
     }
 
     unittest
