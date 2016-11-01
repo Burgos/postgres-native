@@ -42,7 +42,7 @@ struct Message
 
     /// List of all message types
     alias MessageTypes = staticMap!(getMessageStruct,
-            Filter!(hasMessageTag, aliasSeqOf!([__traits(allMembers, message)])));
+            Filter!(hasMessageTag, __traits(allMembers, message)));
 
     // make sure all tags are unique at compile time
     static assert (MessageTypes.length ==
