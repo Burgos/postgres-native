@@ -254,8 +254,10 @@ struct Md5PasswordMessage
     /// opCall call.
     static typeof(this) opCall(ubyte[])
     {
+        import std.exception;
         // not supported
-        assert(false, "Parsing Md5PasswordMessage is not supported");
+        enforce(false, "Parsing Md5PasswordMessage is not supported");
+        assert(false);
     }
 
     unittest
