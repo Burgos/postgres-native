@@ -25,6 +25,10 @@ struct Connection
     /// Database to connect to
     public string database;
 
+    /// Parameters recevied from
+    /// the backend.
+    public string[string] parameters;
+
     /// state of the connection
     enum State
     {
@@ -140,6 +144,12 @@ struct Connection
             {
                 this.state = State.READY_FOR_QUERY;
                 debug (verbose) writeln("Ready for query");
+            }
+
+            if (auto status = response.peek!ParameterStatusMessage)
+            {
+                this.parameters[status.name] = status.value;
+                debug (verbose) writeln(status.name, " = ", status.value);
             }
         }
         while (this.state != State.READY_FOR_QUERY);
