@@ -539,3 +539,58 @@ struct RowDescriptionMessage
         return msg;
     }
 }
+
+/// DataRow message
+struct DataRowMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'D';
+
+    /// number of columns that follows
+    short number_of_columns;
+
+    struct Column
+    {
+        /// Column value length. -1 indicates NULL.
+        int length;
+
+        /// Value in the specified format by RowDescriptionMessage
+        ubyte[] value;
+    }
+
+    Column[] columns;
+
+    /// generates RowDescription message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+
+        msg.number_of_columns = read!short(payload);
+        msg.columns.length = msg.number_of_columns;
+
+        for (auto i = 0; i < msg.number_of_columns; i++)
+        {
+            Column col;
+
+            col.length = read!int(payload);
+            col.value = payload.take(col.length).array;
+            payload = payload.drop(col.length);
+
+            msg.columns[i] = col;
+        }
+
+        debug (verbose)
+        {
+            writeln("Data Row. Number of columns: ", msg.number_of_columns);
+
+            foreach (c; msg.columns)
+            {
+                writeln(c.value);
+            }
+        }
+
+        return msg;
+    }
+}
