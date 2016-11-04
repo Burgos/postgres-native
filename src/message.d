@@ -423,3 +423,26 @@ struct ErrorMessage
         return app.data;
     }
 }
+
+
+/// Query message, sent to the backend
+struct QueryMessage
+{
+    public enum Tag = 'Q';
+
+    /// Constructs a query message using the
+    /// query string
+    static ubyte[] opCall(ref ubyte[] buf, string query)
+    {
+        Message.constructMessage(buf, Tag, query.representation);
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing MessageQuery is not supported");
+    }
+}
