@@ -6,6 +6,7 @@ import std.bitmanip;
 import std.socket;
 import std.stdio;
 import std.exception;
+import std.conv;
 
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
@@ -167,6 +168,33 @@ struct Connection
         Message msg;
         this.send(message.QueryMessage(this.payload, query_string));
         auto response = msg.receiveOne(this);
+
+        if (auto rows = response.peek!(message.RowDescriptionMessage))
+        {
+            debug (verbose) writeln("Got a RowDescription, getting fields");
+
+            // receive rows
+            auto value = msg.receiveOne(this);
+            auto row = value.peek!(message.DataRowMessage);
+
+            while (row)
+            {
+                foreach (i, c; row.columns)
+                {
+                    if (rows.fields[i].format == rows.Field.Format.TEXT)
+                    {
+                        debug (verbose)
+                        {
+                            writeln(rows.fields[i].name, ": ", to!string(cast(char[])c.value));
+                        }
+                    }
+                }
+
+                // receive next
+                value = msg.receiveOne(this);
+                row = value.peek!(message.DataRowMessage);
+            }
+        }
     }
 
     /// TODO: move these low-level communication into a substruct
