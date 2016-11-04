@@ -446,3 +446,96 @@ struct QueryMessage
         assert(false, "Parsing MessageQuery is not supported");
     }
 }
+
+/// RowDescription message
+struct RowDescriptionMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'T';
+
+    /// Number of fields in the row
+    short number_of_fields;
+
+    /// Individual field descriptions
+    struct Field
+    {
+        /// field name
+        string name;
+
+        /// table id
+        int table_id;
+
+        /// column id
+        short column_id;
+
+        /// data type id
+        int data_type_id;
+
+        /// data type size. Negative means
+        /// variable length
+        short data_type_len;
+
+        /// Type modifier. This is type-specific
+        /// value
+        int data_type_mod;
+
+        /// Format code
+        enum Format: short
+        {
+            TEXT = 0,
+            BINARY = 1
+        }
+
+        Format format;
+    }
+
+    Field[] fields;
+
+    /// generates RowDescription message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+
+        msg.number_of_fields = read!short(payload);
+        msg.fields.length = msg.number_of_fields;
+
+        for (auto i = 0; i < msg.number_of_fields; i++)
+        {
+            import std.algorithm.searching: until;
+            Field field;
+
+            field.name = to!string(cast(char[])payload.until(0).array);
+            payload = payload.drop(field.name.length + 1);
+
+            field.table_id = read!int(payload);
+            field.column_id = read!short(payload);
+            field.data_type_id = read!int(payload);
+            field.data_type_len = read!short(payload);
+            field.data_type_mod = read!int(payload);
+
+            field.format = cast(Field.Format)read!short(payload);
+            msg.fields[i] = field;
+        }
+
+        debug (verbose)
+        {
+            writeln("Row description object. Number of fields: ", msg.number_of_fields);
+
+            foreach (f; msg.fields)
+            {
+                writefln("Name: %s\n" ~
+                         "table id: %d\n" ~
+                         "column id: %d\n" ~
+                         "data_type_id: %d\n" ~
+                         "data_type_len: %d\n" ~
+                         "data_type_mod: %d\n" ~
+                         "format: %s\n",
+                         f.tupleof);
+            }
+        }
+
+        return msg;
+    }
+}
