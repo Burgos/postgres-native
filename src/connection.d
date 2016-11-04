@@ -155,6 +155,20 @@ struct Connection
         while (this.state != State.READY_FOR_QUERY);
     }
 
+    /// Executes a query
+    public void query (string query_string)
+    in
+    {
+        assert(this.state == State.READY_FOR_QUERY);
+    }
+    body
+    {
+        // TODO: make receiveOne static
+        Message msg;
+        this.send(message.QueryMessage(this.payload, query_string));
+        auto response = msg.receiveOne(this);
+    }
+
     /// TODO: move these low-level communication into a substruct
     private void connect_socket()
     in

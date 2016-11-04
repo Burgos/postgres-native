@@ -10,4 +10,5 @@ void main()
     auto conn = Connection("127.0.0.1", 5432, "burgos", "test-pass",
             "test");
     conn.connect();
+    conn.query("SELECT * FROM stripovi");
 }
