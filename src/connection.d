@@ -86,14 +86,21 @@ struct Connection
         this.sock.close();
     }
 
+    /// Handles the error message received
     Message.ParsedMessage handleError (Message.ParsedMessage msg)
     {
         if (auto error = msg.peek!(ErrorMessage))
         {
-            throw new Exception(error.toString());
+            this.handleError(error);
         }
 
         return msg;
+    }
+
+    /// ditto
+    void handleError(ErrorMessage)(auto ref ErrorMessage error)
+    {
+        throw new Exception(error.toString());
     }
 
     /// Starts the communication with the server.
@@ -143,7 +150,7 @@ struct Connection
         {
             response = msg.receiveOne(this);
             response.tryVisit!(
-                    (ErrorMessage e) { enforce(false, e.toString()); },
+                    (ErrorMessage e) { this.handleError(e); },
                     (ReadyForQueryMessage msg) { this.state = State.READY_FOR_QUERY; },
                     (ParameterStatusMessage msg) { this.parameters[msg.name] = msg.value; },
                     (BackendKeyDataMessage msg) {
