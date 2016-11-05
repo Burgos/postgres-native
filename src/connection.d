@@ -7,6 +7,7 @@ import std.socket;
 import std.stdio;
 import std.exception;
 import std.conv;
+import std.variant;
 
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
@@ -140,18 +141,19 @@ struct Connection
         // read any status messages
         do
         {
-            response = handleError(msg.receiveOne(this));
-            if (response.peek!(ReadyForQueryMessage))
-            {
-                this.state = State.READY_FOR_QUERY;
-                debug (verbose) writeln("Ready for query");
-            }
+            response = msg.receiveOne(this);
+            response.tryVisit!(
+                    (ErrorMessage e) => { enforce(false, e.toString()); }(),
+                    (ReadyForQueryMessage msg) => { this.state = State.READY_FOR_QUERY; }(),
+                    (ParameterStatusMessage msg) => { this.parameters[msg.name] = msg.value; }(),
+                    (BackendKeyDataMessage msg) => {
+                        this.parameters["process_id"] = to!string(msg.process_id);
+                        this.parameters["process_key"] = to!string(msg.key);
+                    }()
+            )();
 
-            if (auto status = response.peek!ParameterStatusMessage)
-            {
-                this.parameters[status.name] = status.value;
-                debug (verbose) writeln(status.name, " = ", status.value);
-            }
+            writeln("STATE: ", this.state);
+            writeln(this.parameters);
         }
         while (this.state != State.READY_FOR_QUERY);
     }
