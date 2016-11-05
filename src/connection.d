@@ -143,13 +143,12 @@ struct Connection
         {
             response = msg.receiveOne(this);
             response.tryVisit!(
-                    (ErrorMessage e) => { enforce(false, e.toString()); }(),
-                    (ReadyForQueryMessage msg) => { this.state = State.READY_FOR_QUERY; }(),
-                    (ParameterStatusMessage msg) => { this.parameters[msg.name] = msg.value; }(),
-                    (BackendKeyDataMessage msg) => {
+                    (ErrorMessage e) { enforce(false, e.toString()); },
+                    (ReadyForQueryMessage msg) { this.state = State.READY_FOR_QUERY; },
+                    (ParameterStatusMessage msg) { this.parameters[msg.name] = msg.value; },
+                    (BackendKeyDataMessage msg) {
                         this.parameters["process_id"] = to!string(msg.process_id);
-                        this.parameters["process_key"] = to!string(msg.key);
-                    }()
+                        this.parameters["process_key"] = to!string(msg.key); return; }
             )();
 
             writeln("STATE: ", this.state);
