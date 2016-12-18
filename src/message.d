@@ -840,7 +840,6 @@ struct BindMessage
 
     version (unittest)
     {
-        import std.stdio: writeln;
         import std.typecons: Nullable;
     }
     unittest
@@ -858,10 +857,12 @@ struct BindMessage
 
         msg.parameter_values = [v1, v2];
 
+        msg.num_result_format_codes = 3;
+        msg.result_format_codes = [FormatCodes.TEXT, FormatCodes.BINARY,
+            FormatCodes.TEXT];
+
         ubyte[] buf;
         BindMessage(buf, msg);
-
-        writeln(buf);
 
         assert(buf[0] == cast(ubyte)BindMessage.Tag);
         assert(buf[5] == msg.dest_portal_name.representation[0]);
@@ -873,6 +874,17 @@ struct BindMessage
         assert(read!short(r) == msg.num_format_codes);
         assert(read!ushort(r) == FormatCodes.TEXT);
         assert(read!ushort(r) == FormatCodes.BINARY);
+        assert(read!ushort(r) == msg.num_parameter_values);
+        assert(read!int(r) == 4);
+        assert(r.take(4).array == cast(ubyte[])[1, 2, 3, 4]);
+        r = r.drop(4);
+        assert(read!int(r) == 4);
+        assert(r.take(4).array == cast(ubyte[])[2, 3, 4, 5]);
+        r = r.drop(4);
+        assert(read!short(r) == msg.num_result_format_codes);
+        assert(read!ushort(r) == FormatCodes.TEXT);
+        assert(read!ushort(r) == FormatCodes.BINARY);
+        assert(read!ushort(r) == FormatCodes.TEXT);
     }
 
     /// Dummy opCall, needed to satisfy message-generic
