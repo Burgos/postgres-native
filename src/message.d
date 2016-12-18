@@ -3,6 +3,7 @@
 module message;
 
 import connection;
+import types;
 
 import std.range;
 import std.conv;
@@ -807,21 +808,8 @@ struct BindMessage
     /// match the number of parameters needed by the query.
     public short num_parameter_values;
 
-    /// Parameter value
-    public struct ParameterValue
-    {
-        /// The length of the parameter value, in bytes (this count does not include
-        /// itself). Can be zero. As a special case, -1 indicates a NULL parameter value.
-        /// No value butyes follow in the null case.
-        public int length;
-
-        /// The value of the parameter, in the format indicated by the associated format
-        /// code. Must match the length.
-        public ubyte[] value;
-    }
-
     /// List of the parameter values
-    public ParameterValue[] parameter_values;
+    public LengthArray[] parameter_values;
 
 
     /// The number of result-column format codes that follow. This can be zero
