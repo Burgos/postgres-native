@@ -271,13 +271,13 @@ struct Md5PasswordMessage
 
     static ubyte[] opCall(ref ubyte[] buf, string username, string password, ubyte[] salt)
     {
-        char[32 + 3] hash_buf; // md5+password string
+        ubyte[32 + 3] hash_buf; // md5+password string
 
         import std.digest.md;
-        hash_buf[0..3] = "md5";
+        hash_buf[0..3] = "md5".representation;
         hash_buf[3..$] = md5Of(
                     md5Of(password, username).toHexString!(LetterCase.lower), salt
-                ).toHexString!(LetterCase.lower);
+                ).toHexString!(LetterCase.lower).representation;
 
         Message.constructMessage(buf, Tag, hash_buf[]);
         return buf;
