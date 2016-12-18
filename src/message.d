@@ -696,3 +696,46 @@ enum TypeOID: int
     VARBIT         = 1562,
     NUMERIC        = 1700,
 }
+
+/// Parse message, sent to the backend.
+struct ParseMessage
+{
+    public enum Tag = 'P';
+
+    /// The name of the destination prepared statement (an empty string selects
+    /// the unnamed prepared statement).
+    public string prepared_statement_name;
+
+    /// The query string to be parsed
+    public string query_string;
+
+    /// The numer of parameter data types specified (can be zero). Note that this
+    /// is not an indication of the number of parameters that might appear in the
+    /// query string, only the number that the frontend wants to prespecify types
+    /// for.
+    public ushort num_data_types;
+
+    /// Object ID of the parameter data type. Placing a zero here is equivalent
+    /// of leaving the type unspecified.
+    public TypeOID[] data_types;
+
+    /// Constructs a Parse message
+    static ubyte[] opCall(ref ubyte[] buf, ParseMessage msg)
+    {
+        Message.constructMessage(buf, Tag,
+                msg.prepared_statement_name.representation,
+                msg.query_string.representation,
+                msg.num_data_types,
+                msg.data_types);
+
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing ParseMessage is not supported");
+    }
+}
