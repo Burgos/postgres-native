@@ -826,8 +826,8 @@ struct BindMessage
     static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
     {
         Message.constructMessage(buf, Tag,
-                msg.dest_portal_name.representation,
-                msg.source_prep_stmt_name.representation,
+                msg.dest_portal_name,
+                msg.source_prep_stmt_name,
                 msg.num_format_codes,
                 msg.param_format_codes,
                 msg.parameter_values,
