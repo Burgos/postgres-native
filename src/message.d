@@ -136,14 +136,45 @@ struct Message
 
         foreach (param; args)
         {
-            static if (is(typeof(param) == string))
+            // Length-prepended arrays are serialized
+            // with the length first, and then the array
+            static if (is(typeof(param) == LengthArray))
+            { 
+                param.append(app);
+            }
+            else static if (is(typeof(param) == string))
             {
                 app.put(param.representation);
                 app.append(cast(ubyte)0);
             }
-            else static if (isArray!(typeof(param)))
+            else static if(isArray!(typeof(param)))
             {
-                app ~= cast(ubyte[])param;
+                static if (ElementType!(typeof(param)).sizeof == ubyte.sizeof)
+                {
+                    app ~= cast(ubyte[])param;
+                }
+                else
+                {
+                    foreach (el; param)
+                    {
+                        static if (is(el: short))
+                        {
+                            app.append(cast(short)el);
+                        }
+                        else static if(is(el: int))
+                        {
+                            app.append(cast(int)el);
+                        }
+                        else static if (is(ElementType!(typeof(param)) == LengthArray))
+                        {
+                            el.append(app);
+                        }
+                        else
+                        {
+                            app.append(el);
+                        }
+                    }
+                }
             }
             else
             {
