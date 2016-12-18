@@ -83,6 +83,7 @@ struct Message
             writeln("Tag: ", tag);
             writeln("Length: ", len);
             writefln("Payload: %(%x, %)", payload);
+            writefln("Message: %s", ret);
         }
 
         return ret;
