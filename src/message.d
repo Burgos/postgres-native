@@ -830,8 +830,9 @@ struct BindMessage
                 msg.source_prep_stmt_name,
                 msg.num_format_codes,
                 msg.param_format_codes,
+                msg.num_parameter_values,
                 msg.parameter_values,
-                msg.result_format_codes,
+                msg.num_result_format_codes,
                 msg.result_format_codes);
 
         return buf;
