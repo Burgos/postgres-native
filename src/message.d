@@ -801,7 +801,7 @@ struct BindMessage
     public short num_result_format_codes;
 
     /// The result-column format codes.
-    public FormatCodes result_format_codes;
+    public FormatCodes[] result_format_codes;
 
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
