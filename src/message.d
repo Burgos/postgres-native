@@ -740,3 +740,81 @@ struct ParseMessage
         assert(false, "Parsing ParseMessage is not supported");
     }
 }
+
+/// Bind message. Sent to the backend binding data for each placeholder
+/// specified in Parse message.
+struct BindMessage
+{
+    public enum Tag = 'B';
+
+    /// The name of the destination portal (an empty string selects the
+    /// unnamed portal).
+    public string dest_portal_name;
+
+    /// The name of the source prepared statement (an empty string selects
+    /// the unnamed prepared statement).
+    public string source_prep_stmt_name;
+
+    /// The number of parameter format codes that follow. This can be zero
+    /// to indicate that there are no parameters, or that all parameteres
+    /// uses the default format (text); or one, in which case the specified
+    /// format code is applied to all parameters; or it can equal the actual
+    /// number of parameters.
+    public short num_format_codes;
+
+    /// Format codes
+    public enum FormatCodes: ushort
+    {
+        TEXT = 0,
+        BINARY = 1,
+    }
+
+    /// Ditto
+    public FormatCodes[] param_format_codes;
+
+    /// The number of parameter values that follow (possibly zero). This must
+    /// match the number of parameters needed by the query.
+    public short num_parameter_values;
+
+    /// Parameter value
+    public struct ParameterValue
+    {
+        /// The length of the parameter value, in bytes (this count does not include
+        /// itself). Can be zero. As a special case, -1 indicates a NULL parameter value.
+        /// No value butyes follow in the null case.
+        public int length;
+
+        /// The value of the parameter, in the format indicated by the associated format
+        /// code. Must match the length.
+        public ubyte[] value;
+    }
+
+    /// List of the parameter values
+    public ParameterValue[] parameter_values;
+
+
+    /// The number of result-column format codes that follow. This can be zero
+    /// to indicate that there are no result columns, or that all parameteres
+    /// uses the default format (text); or one, in which case the specified
+    /// format code is applied to all result columns; or it can equal the actual
+    /// number of result columns.
+    public short num_result_format_codes;
+
+    /// The result-column format codes.
+    public FormatCodes result_format_codes;
+
+    /// Constructs a Bind message
+    static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
+    {
+        /// TODO
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing BindMessage is not supported");
+    }
+}
