@@ -353,6 +353,53 @@ struct ReadyForQueryMessage
     }
 }
 
+/// Close message.
+struct CloseMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'C';
+
+    /// Type of the close message
+    enum Type: char
+    {
+        PREPARED_STATEMENT = 'S',
+        PORTAL = 'P',
+    }
+
+    /// ditto
+    public Type type;
+
+    /// Name of the prepared statement or portal
+    /// to close. (an empty string selects the unnamed prepared statement
+    /// or portal).
+    public string name;
+
+    /// generates Close message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+
+        msg.type = read!Type(payload);
+        msg.name = to!string(cast(char[])payload.array);
+
+        return msg;
+    }
+
+    /// provides text representation
+    public string toString()
+    {
+        import std.format;
+        auto app = appender!string;
+
+        app ~= "Close: \n";
+        app ~= format("Type: %s, Name: %s\n",
+                this.type, this.name);
+
+        return app.data;
+    }
+}
 
 /// error message
 struct ErrorMessage
