@@ -837,6 +837,43 @@ struct BindMessage
         return buf;
     }
 
+    version (unittest)
+    {
+        import std.stdio: writeln;
+        import std.typecons: Nullable;
+    }
+    unittest
+    {
+        BindMessage msg;
+        msg.dest_portal_name = "A";
+        msg.source_prep_stmt_name = "B";
+        msg.num_format_codes = 2;
+        msg.param_format_codes = [FormatCodes.TEXT, FormatCodes.BINARY];
+
+        msg.num_parameter_values = 2;
+
+        auto v1 = LengthArray(0, Nullable!(ubyte[])(cast(ubyte[])[1, 2, 3, 4]));
+        auto v2 = LengthArray(0, Nullable!(ubyte[])(cast(ubyte[])[2, 3, 4, 5]));
+
+        msg.parameter_values = [v1, v2];
+
+        ubyte[] buf;
+        BindMessage(buf, msg);
+
+        writeln(buf);
+
+        assert(buf[0] == cast(ubyte)BindMessage.Tag);
+        assert(buf[5] == msg.dest_portal_name.representation[0]);
+        assert(buf[6] == 0);
+        assert(buf[7] == msg.source_prep_stmt_name.representation[0]);
+        assert(buf[8] == 0);
+
+        auto r = buf[9..$];
+        assert(read!short(r) == msg.num_format_codes);
+        assert(read!ushort(r) == FormatCodes.TEXT);
+        assert(read!ushort(r) == FormatCodes.BINARY);
+    }
+
     /// Dummy opCall, needed to satisfy message-generic
     /// opCall call.
     static typeof(this) opCall(ubyte[])
