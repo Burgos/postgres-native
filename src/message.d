@@ -806,7 +806,15 @@ struct BindMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
     {
-        /// TODO
+        Message.constructMessage(buf, Tag,
+                msg.dest_portal_name.representation,
+                msg.source_prep_stmt_name.representation,
+                msg.num_format_codes,
+                msg.param_format_codes,
+                msg.parameter_values,
+                msg.result_format_codes,
+                msg.result_format_codes);
+
         return buf;
     }
 
