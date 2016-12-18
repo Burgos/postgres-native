@@ -795,7 +795,7 @@ struct BindMessage
     public short num_format_codes;
 
     /// Format codes
-    public enum FormatCodes: ushort
+    public enum FormatCodes: short
     {
         TEXT = 0,
         BINARY = 1,
