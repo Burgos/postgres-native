@@ -642,3 +642,57 @@ struct DataRowMessage
         return msg;
     }
 }
+
+
+/******************************************************************************
+
+    Extended query protocol support.
+
+******************************************************************************/
+
+/// Object ID enumeration for types. From pg_type.h
+enum TypeOID: int
+{
+    BOOL           = 16,
+    BYTEA          = 17,
+    CHAR           = 18,
+    NAME           = 19,
+    INT8           = 20,
+    INT2           = 21,
+    INT2VECTOR     = 22,
+    INT4           = 23,
+    REGPROC        = 24,
+    TEXT           = 25,
+    OID            = 26,
+    TID            = 27,
+    XID            = 28,
+    CID            = 29,
+    OIDVECTOR      = 30,
+    POINT          = 600,
+    LSEG           = 601,
+    PATH           = 602,
+    BOX            = 603,
+    POLYGON        = 604,
+    LINE           = 628,
+    FLOAT4         = 700,
+    FLOAT8         = 701,
+    ABSTIME        = 702,
+    RELTIME        = 703,
+    TINTERVAL      = 704,
+    UNKNOWN        = 705,
+    CIRCLE         = 718,
+    CASH           = 790,
+    INET           = 869,
+    CIDR           = 650,
+    BPCHAR         = 1042,
+    VARCHAR        = 1043,
+    DATE           = 1082,
+    TIME           = 1083,
+    TIMESTAMP      = 1114,
+    TIMESTAMPTZ    = 1184,
+    INTERVAL       = 1186,
+    TIMETZ         = 1266,
+    ZPBIT          = 1560,
+    VARBIT         = 1562,
+    NUMERIC        = 1700,
+}
