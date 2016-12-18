@@ -29,7 +29,8 @@ struct LengthArray
         else
         {
             auto data = this.value.get();
-            app.append(data.length);
+            assert(data.length < uint.max);
+            app.append(cast(uint)data.length);
             app ~= data;
         }
     }
