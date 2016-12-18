@@ -1,4 +1,5 @@
 /// Message received from Postgres
+/// Copyright: Copyright (c) 2016 Nemanja Boric
 module message;
 
 import connection;

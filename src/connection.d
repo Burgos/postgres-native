@@ -1,3 +1,5 @@
+/// Postgresql connection protocol
+/// Copyright: Copyright (c) 2016 Nemanja Boric
 module connection;
 
 import message;
