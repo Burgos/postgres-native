@@ -981,6 +981,47 @@ struct BindCompleteMessage
     }
 }
 
+/// Describe message. Asks for RowDescription message
+struct DescribeMessage
+{
+    public enum Tag = 'D';
+
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
+
+    enum Type: ubyte
+    {
+        STATEMENT = 'S',
+        PORTAL = 'P'
+    }
+
+    /// S to describe a prepared statement, P to describe a portal
+    public Type type = Type.PORTAL;
+
+    /// The name of the portal or statement (an empty string selects the
+    /// unnamed one).
+    public string name;
+
+
+    /// Constructs a Bind message
+    static ubyte[] opCall(ref ubyte[] buf, DescribeMessage msg)
+    {
+        Message.constructMessage!(false)(buf, Tag,
+                msg.type,
+                msg.name);
+
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing ExecuteMessage is not supported");
+    }
+}
+
 /// Execute message. Starts the extended query
 struct ExecuteMessage
 {
