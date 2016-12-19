@@ -895,3 +895,20 @@ struct BindMessage
         assert(false, "Parsing BindMessage is not supported");
     }
 }
+
+/// Bind completed
+struct BindCompleteMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = '2';
+
+    /// generates parameter status message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+        return msg;
+    }
+}
+
