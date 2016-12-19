@@ -109,7 +109,7 @@ struct Message
         int protocol = ~0;
         protocol &= protocol_major << 16 | protocol_minor;
 
-        this.payload = this.constructMessage(this.payload,
+        this.payload = this.constructMessage!(true)(this.payload,
                 char.init, // startup message, no type
                 protocol,
                 "database", database,
@@ -128,7 +128,7 @@ struct Message
     ///     buf = buffer to fill
     ///     type = message type (0 for no type)
     ///     args = args to pack
-    static ubyte[] constructMessage(alias final_terminator = true,
+    static ubyte[] constructMessage(alias final_terminator = false,
             Args...)(ref ubyte[] buf, char type, Args args)
     {
         import std.traits;
@@ -194,7 +194,7 @@ struct Message
         }
 
         // final terminator
-        if (final_terminator)
+        static if (final_terminator)
             app.append(cast(ubyte)0);
 
         // set the payload length
@@ -297,7 +297,7 @@ struct Md5PasswordMessage
                     md5Of(password, username).toHexString!(LetterCase.lower), salt
                 ).toHexString!(LetterCase.lower).representation;
 
-        Message.constructMessage(buf, Tag, hash_buf[]);
+        Message.constructMessage!(true)(buf, Tag, hash_buf[]);
         return buf;
     }
 
@@ -550,7 +550,7 @@ struct QueryMessage
     /// query string
     static ubyte[] opCall(ref ubyte[] buf, string query)
     {
-        Message.constructMessage!(false)(buf, Tag, query);
+        Message.constructMessage(buf, Tag, query);
         return buf;
     }
 
@@ -800,7 +800,7 @@ struct ParseMessage
     /// Constructs a Parse message
     static ubyte[] opCall(ref ubyte[] buf, ParseMessage msg)
     {
-        Message.constructMessage!(false)(buf, Tag,
+        Message.constructMessage(buf, Tag,
                 msg.prepared_statement_name,
                 msg.query_string,
                 msg.num_data_types);
@@ -873,7 +873,7 @@ struct BindMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
     {
-        Message.constructMessage!(false)(buf, Tag,
+        Message.constructMessage(buf, Tag,
                 msg.dest_portal_name,
                 msg.source_prep_stmt_name,
                 msg.num_format_codes,
@@ -1006,7 +1006,7 @@ struct DescribeMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, DescribeMessage msg)
     {
-        Message.constructMessage!(false)(buf, Tag,
+        Message.constructMessage(buf, Tag,
                 msg.type,
                 msg.name);
 
@@ -1042,7 +1042,7 @@ struct ExecuteMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, ExecuteMessage msg)
     {
-        Message.constructMessage!(false)(buf, Tag,
+        Message.constructMessage(buf, Tag,
                 msg.portal_name,
                 msg.max_rows);
 
@@ -1097,7 +1097,7 @@ struct SyncMessage
     /// Constructs a Sync message
     static ubyte[] opCall(ref ubyte[] buf, SyncMessage msg)
     {
-        Message.constructMessage!(false)(buf, Tag);
+        Message.constructMessage(buf, Tag);
         return buf;
     }
 
