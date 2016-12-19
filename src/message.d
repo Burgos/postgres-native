@@ -550,7 +550,7 @@ struct QueryMessage
     /// query string
     static ubyte[] opCall(ref ubyte[] buf, string query)
     {
-        Message.constructMessage(buf, Tag, query.representation);
+        Message.constructMessage!(false)(buf, Tag, query);
         return buf;
     }
 
