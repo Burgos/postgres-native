@@ -944,6 +944,24 @@ struct BindMessage
     }
 }
 
+/// Parse completed
+struct ParseCompleteMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = '1';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
+
+    /// generates parameter status message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+        return msg;
+    }
+}
 /// Bind completed
 struct BindCompleteMessage
 {
