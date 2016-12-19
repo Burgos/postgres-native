@@ -215,13 +215,36 @@ struct Connection
     }
     body
     {
+        import types;
+        import std.string;
+
         // TODO: make receiveOne static
         Message msg;
         message.ParseMessage parsemsg;
+        message.DescribeMessage describemsg;
+        message.BindMessage bindmsg;
+        message.ExecuteMessage execmsg;
+        bindmsg.num_parameter_values = 1;
+        bindmsg.parameter_values = [LengthArray(cast(ubyte[])['1'])];
+        message.SyncMessage sync;
         parsemsg.query_string = query_string;
 
         this.send(message.ParseMessage(this.payload, parsemsg));
+        this.send(message.BindMessage(this.payload, bindmsg));
+        this.send(message.DescribeMessage(this.payload, describemsg));
+        this.send(message.ExecuteMessage(this.payload, execmsg));
+        this.send(message.SyncMessage(this.payload, sync));
+
         auto response = msg.receiveOne(this);
+        enforce(response.peek!(message.ParseCompleteMessage),
+                "Expected ParseCompleteMessage");
+
+        response = msg.receiveOne(this);
+        enforce(response.peek!(message.BindCompleteMessage),
+                "Expected BindCompleteMessage");
+
+
+        response = msg.receiveOne(this);
 
         if (auto rows = response.peek!(message.RowDescriptionMessage))
         {
@@ -248,8 +271,20 @@ struct Connection
                 value = msg.receiveOne(this);
                 row = value.peek!(message.DataRowMessage);
             }
+
+            // The last one isn't the DataRowMessage, parse
+            // it out the loop
+            response = value;
         }
+
+        enforce(response.peek!(message.CommandCompleteMessage),
+                "Expected CommandCompleteMessage");
+
+        response = msg.receiveOne(this);
+        enforce(response.peek!(message.ReadyForQueryMessage),
+                "Expected ReadyForQueryMessage");
     }
+
     /// TODO: move these low-level communication into a substruct
     private void connect_socket()
     in
