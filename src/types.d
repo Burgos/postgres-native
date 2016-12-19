@@ -34,4 +34,11 @@ struct LengthArray
             app ~= data;
         }
     }
+
+    public static LengthArray opCall(ubyte[] data)
+    {
+        LengthArray arr;
+        arr.value = Nullable!(ubyte[])(data);
+        return arr;
+    }
 }
