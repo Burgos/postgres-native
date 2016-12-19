@@ -946,3 +946,28 @@ struct ExecuteMessage
         assert(false, "Parsing ExecuteMessage is not supported");
     }
 }
+
+// TODO: PortalSuspended
+
+/// CommandComplete message
+struct CommandCompleteMessage
+{
+    /// Message type tag
+    /// Sent as a first byte of a message
+    enum Tag = 'C';
+
+    /// The command tag. This is usually a single word that identifies which
+    //SQL command was completed.
+    public string tag;
+
+    /// generates RowDescription message
+    /// out of payload
+    static auto opCall(Range)(Range payload)
+    {
+        typeof(this) msg;
+
+        import std.algorithm.searching: until;
+        msg.tag = to!string(cast(char[])payload.until(0).array);
+        return msg;
+    }
+}
