@@ -64,6 +64,23 @@ struct Message
     alias VariantN!(maxSize!MessageTypes,
             MessageTypes) ParsedMessage;
 
+    // Declare message type buffers for every message type
+    // so we don't allocate every time we receive the same
+    // message type.
+    mixin(generateMembers!(MessageTypes));
+
+    /// Generates list of members for every message type
+    static string generateMembers(types...)()
+    {
+        string ret;
+        foreach (type; types)
+        {
+            ret ~= type.stringof ~ " msg_" ~ type.stringof ~ ";\n";
+        }
+
+        return ret;
+    }
+
     /// Receives a message from the server
     public ParsedMessage receiveOne (ref Connection c)
     {
