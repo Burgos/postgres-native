@@ -1,14 +1,18 @@
 module app;
 
-import message;
-import connection;
-
 void main()
 {
+    import message;
+    import connection;
+    import std.stdio;
+
     // try to connect to the
     // postgres, and see what we have
     auto conn = Connection("127.0.0.1", 5432, "burgos", "test-pass",
             "test");
     conn.connect();
+    writeln("\tExecuting extended query: ");
     conn.query("SELECT * FROM stripovi WHERE id > $1", 1);
+    writeln("\tExecuting normal query: ");
+    conn.query("SELECT * FROM stripovi WHERE id > 1");
 }
