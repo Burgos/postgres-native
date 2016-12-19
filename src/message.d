@@ -725,6 +725,7 @@ struct DataRowMessage
 /// Object ID enumeration for types. From pg_type.h
 enum TypeOID: int
 {
+    NOT_SPECIFIED  = 0,
     BOOL           = 16,
     BYTEA          = 17,
     CHAR           = 18,
@@ -792,16 +793,16 @@ struct ParseMessage
 
     /// Object ID of the parameter data type. Placing a zero here is equivalent
     /// of leaving the type unspecified.
-    public TypeOID[] data_types;
+    public TypeOID[] data_types = [TypeOID.NOT_SPECIFIED];
 
     /// Constructs a Parse message
     static ubyte[] opCall(ref ubyte[] buf, ParseMessage msg)
     {
         Message.constructMessage(buf, Tag,
-                msg.prepared_statement_name.representation,
-                msg.query_string.representation,
-                msg.num_data_types,
-                msg.data_types);
+                msg.prepared_statement_name,
+                msg.query_string,
+                msg.num_data_types);
+                //0);///msg.data_types);*/
 
         return buf;
     }

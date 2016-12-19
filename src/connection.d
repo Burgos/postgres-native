@@ -207,6 +207,49 @@ struct Connection
         }
     }
 
+    /// Executes a complex query
+    public void query(Args) (string query_string, Args args...)
+    in
+    {
+        assert(this.state == State.READY_FOR_QUERY);
+    }
+    body
+    {
+        // TODO: make receiveOne static
+        Message msg;
+        message.ParseMessage parsemsg;
+        parsemsg.query_string = query_string;
+
+        this.send(message.ParseMessage(this.payload, parsemsg));
+        auto response = msg.receiveOne(this);
+
+        if (auto rows = response.peek!(message.RowDescriptionMessage))
+        {
+            debug (verbose) writeln("Got a RowDescription, getting fields");
+
+            // receive rows
+            auto value = msg.receiveOne(this);
+            auto row = value.peek!(message.DataRowMessage);
+
+            while (row)
+            {
+                foreach (i, c; row.columns)
+                {
+                    if (rows.fields[i].format == rows.Field.Format.TEXT)
+                    {
+                        debug (verbose)
+                        {
+                            writeln(rows.fields[i].name, ": ", to!string(cast(char[])c.value));
+                        }
+                    }
+                }
+
+                // receive next
+                value = msg.receiveOne(this);
+                row = value.peek!(message.DataRowMessage);
+            }
+        }
+    }
     /// TODO: move these low-level communication into a substruct
     private void connect_socket()
     in
@@ -243,6 +286,12 @@ struct Connection
 
     public ptrdiff_t send (void[] buf)
     {
+        debug (verbose)
+        {
+            writeln("Raw bytes: ", buf);
+            writeln("As strings: ", cast(char[])buf);
+        }
+
         return this.sock.send(buf);
     }
 }
