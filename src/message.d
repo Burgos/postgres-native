@@ -128,7 +128,8 @@ struct Message
     ///     buf = buffer to fill
     ///     type = message type (0 for no type)
     ///     args = args to pack
-    static ubyte[] constructMessage(Args...)(ref ubyte[] buf, char type, Args args)
+    static ubyte[] constructMessage(alias final_terminator = true,
+            Args...)(ref ubyte[] buf, char type, Args args)
     {
         import std.traits;
 
@@ -193,7 +194,8 @@ struct Message
         }
 
         // final terminator
-        app.append(cast(ubyte)0);
+        if (final_terminator)
+            app.append(cast(ubyte)0);
 
         // set the payload length
         buf.write!int(cast(int)(buf.length - (type != char.init ? char.sizeof : 0)),
@@ -798,7 +800,7 @@ struct ParseMessage
     /// Constructs a Parse message
     static ubyte[] opCall(ref ubyte[] buf, ParseMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        Message.constructMessage!(false)(buf, Tag,
                 msg.prepared_statement_name,
                 msg.query_string,
                 msg.num_data_types);
@@ -871,7 +873,7 @@ struct BindMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        Message.constructMessage!(false)(buf, Tag,
                 msg.dest_portal_name,
                 msg.source_prep_stmt_name,
                 msg.num_format_codes,
@@ -981,7 +983,7 @@ struct ExecuteMessage
     /// Constructs a Bind message
     static ubyte[] opCall(ref ubyte[] buf, ExecuteMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        Message.constructMessage!(false)(buf, Tag,
                 msg.portal_name,
                 msg.max_rows);
 
@@ -1036,7 +1038,7 @@ struct SyncMessage
     /// Constructs a Sync message
     static ubyte[] opCall(ref ubyte[] buf, SyncMessage msg)
     {
-        Message.constructMessage(buf, Tag);
+        Message.constructMessage!(false)(buf, Tag);
         return buf;
     }
 
