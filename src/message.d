@@ -1023,3 +1023,27 @@ struct CommandCompleteMessage
         return msg;
     }
 }
+
+/// Sync message
+struct SyncMessage
+{
+    public enum Tag = 'S';
+
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
+
+    /// Constructs a Sync message
+    static ubyte[] opCall(ref ubyte[] buf, SyncMessage msg)
+    {
+        Message.constructMessage(buf, Tag);
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing SyncMessage is not supported");
+    }
+}
