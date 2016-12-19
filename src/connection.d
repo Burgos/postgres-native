@@ -160,8 +160,8 @@ struct Connection
                         this.parameters["process_key"] = to!string(msg.key); return; }
             )();
 
-            writeln("STATE: ", this.state);
-            writeln(this.parameters);
+            debug (verbose) writeln("STATE: ", this.state);
+            debug (verbose) writeln(this.parameters);
         }
         while (this.state != State.READY_FOR_QUERY);
     }
