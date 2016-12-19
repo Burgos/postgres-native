@@ -914,3 +914,35 @@ struct BindCompleteMessage
     }
 }
 
+/// Execute message. Starts the extended query
+struct ExecuteMessage
+{
+    public enum Tag = 'E';
+
+    /// The name of the portal (an empty string selects the
+    /// unnamed portal).
+    public string portal_name;
+
+    /// Maximum number of rows to return. Zero denotes
+    /// "no limit".
+    public int max_rows;
+
+
+    /// Constructs a Bind message
+    static ubyte[] opCall(ref ubyte[] buf, ExecuteMessage msg)
+    {
+        Message.constructMessage(buf, Tag,
+                msg.portal_name,
+                msg.max_rows);
+
+        return buf;
+    }
+
+    /// Dummy opCall, needed to satisfy message-generic
+    /// opCall call.
+    static typeof(this) opCall(ubyte[])
+    {
+        // not supported
+        assert(false, "Parsing ExecuteMessage is not supported");
+    }
+}
