@@ -269,27 +269,26 @@ struct AuthenticationMessage
 
     /// Constructs an auth. message from the given
     /// payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
-        msg.format = cast(AuthFormat)read!int(payload);
+        this.format = cast(AuthFormat)read!int(payload);
 
-        with (AuthFormat) switch (msg.format)
+        with (AuthFormat) switch (this.format)
         {
             case CRYPTPASS:
-                msg.salt.crypt_salt[] = payload.take(2)[];
+                this.salt.crypt_salt[] = payload.take(2)[];
                 break;
             case MD5PASS:
-                msg.salt.md5_salt[] = payload.take(4)[];
+                this.salt.md5_salt[] = payload.take(4)[];
                 break;
             case CLEARTEXT:
             case OK:
                 break;
             default:
-                throw new Exception("Auth format " ~ to!(string)(msg.format) ~ " not supported.");
+                throw new Exception("Auth format " ~ to!(string)(this.format) ~ " not supported.");
         }
 
-        return msg;
+        return this;
     }
 }
 
@@ -367,15 +366,14 @@ struct ParameterStatusMessage
 
     /// generates parameter status message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
         import std.algorithm.iteration: splitter;
-        typeof(this) msg;
         auto params = splitter(payload, cast(ubyte)0);
-        msg.name = to!(string)(cast(char[])(params.take(1).array[0]));
-        msg.value = to!(string)(cast(char[])(params.drop(1).take(1).array[0]));
-        debug (verbose) writeln("name: ", msg.name, " value: ", msg.value);
-        return msg;
+        this.name = to!(string)(cast(char[])(params.take(1).array[0]));
+        this.value = to!(string)(cast(char[])(params.drop(1).take(1).array[0]));
+        debug (verbose) writeln("name: ", this.name, " value: ", this.value);
+        return this;
     }
 }
 
@@ -397,16 +395,15 @@ struct BackendKeyDataMessage
 
     /// generates parameter status message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
-        msg.process_id = read!int(payload);
-        msg.key = read!int(payload);
+        this.process_id = read!int(payload);
+        this.key = read!int(payload);
 
-        debug (verbose) writeln("process id: ", msg.process_id,
-                " secret key: ", msg.key);
+        debug (verbose) writeln("process id: ", this.process_id,
+                " secret key: ", this.key);
 
-        return msg;
+        return this;
     }
 }
 
@@ -426,14 +423,12 @@ struct ReadyForQueryMessage
 
     /// generates parameter status message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
+        this.transaction_status = read!char(payload);
+        debug (verbose) writeln("transaction status: ", this.transaction_status);
 
-        msg.transaction_status = read!char(payload);
-        debug (verbose) writeln("transaction status: ", msg.transaction_status);
-
-        return msg;
+        return this;
     }
 }
 
@@ -464,14 +459,12 @@ struct CloseMessage
 
     /// generates Close message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
+        this.type = read!Type(payload);
+        this.name = to!string(cast(char[])payload.array);
 
-        msg.type = read!Type(payload);
-        msg.name = to!string(cast(char[])payload.array);
-
-        return msg;
+        return this;
     }
 
     /// provides text representation
@@ -523,10 +516,9 @@ struct ErrorMessage
 
     /// generates error message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
         import std.algorithm.iteration: splitter;
-        typeof(this) msg;
 
         // split the error message
         // into range of TSTR\0
@@ -539,10 +531,10 @@ struct ErrorMessage
 
             auto type = read!char(param);
             auto value = to!string(cast(char[])param.array);
-            msg.info[to!FieldType(type)] = value;
+            this.info[to!FieldType(type)] = value;
         }
 
-        return msg;
+        return this;
     }
 
     /// provides text representation
@@ -637,14 +629,16 @@ struct RowDescriptionMessage
 
     /// generates RowDescription message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
+        this.number_of_fields = read!short(payload);
 
-        msg.number_of_fields = read!short(payload);
-        msg.fields.length = msg.number_of_fields;
+        this.fields.length = 0;
+        assumeSafeAppend(this.fields);
 
-        for (auto i = 0; i < msg.number_of_fields; i++)
+        this.fields.length = this.number_of_fields;
+
+        for (auto i = 0; i < this.number_of_fields; i++)
         {
             import std.algorithm.searching: until;
             Field field;
@@ -659,14 +653,14 @@ struct RowDescriptionMessage
             field.data_type_mod = read!int(payload);
 
             field.format = cast(Field.Format)read!short(payload);
-            msg.fields[i] = field;
+            this.fields[i] = field;
         }
 
         debug (verbose)
         {
-            writeln("Row description object. Number of fields: ", msg.number_of_fields);
+            writeln("Row description object. Number of fields: ", this.number_of_fields);
 
-            foreach (f; msg.fields)
+            foreach (f; this.fields)
             {
                 writefln("Name: %s\n" ~
                          "table id: %d\n" ~
@@ -679,7 +673,7 @@ struct RowDescriptionMessage
             }
         }
 
-        return msg;
+        return this;
     }
 }
 
@@ -709,14 +703,14 @@ struct DataRowMessage
 
     /// generates RowDescription message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
+        this.number_of_columns = read!short(payload);
+        this.columns.length = 0;
+        assumeSafeAppend(this.columns);
+        this.columns.length = this.number_of_columns;
 
-        msg.number_of_columns = read!short(payload);
-        msg.columns.length = msg.number_of_columns;
-
-        for (auto i = 0; i < msg.number_of_columns; i++)
+        for (auto i = 0; i < this.number_of_columns; i++)
         {
             Column col;
 
@@ -724,20 +718,20 @@ struct DataRowMessage
             col.value = payload.take(col.length).array;
             payload = payload.drop(col.length);
 
-            msg.columns[i] = col;
+            this.columns[i] = col;
         }
 
         debug (verbose)
         {
-            writeln("Data Row. Number of columns: ", msg.number_of_columns);
+            writeln("Data Row. Number of columns: ", this.number_of_columns);
 
-            foreach (c; msg.columns)
+            foreach (c; this.columns)
             {
                 writeln(c.value);
             }
         }
 
-        return msg;
+        return this;
     }
 }
 
@@ -980,10 +974,9 @@ struct ParseCompleteMessage
 
     /// generates parameter status message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
-        return msg;
+        return this;
     }
 }
 /// Bind completed
@@ -998,10 +991,9 @@ struct BindCompleteMessage
 
     /// generates parameter status message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
-        return msg;
+        return this;
     }
 }
 
@@ -1100,13 +1092,11 @@ struct CommandCompleteMessage
 
     /// generates RowDescription message
     /// out of payload
-    static auto opCall(Range)(Range payload)
+    auto opCall(Range)(Range payload)
     {
-        typeof(this) msg;
-
         import std.algorithm.searching: until;
-        msg.tag = to!string(cast(char[])payload.until(0).array);
-        return msg;
+        this.tag = to!string(cast(char[])payload.until(0).array);
+        return this;
     }
 }
 
