@@ -13,6 +13,13 @@ import std.string;
 
 debug (verbose) import std.stdio;
 
+/// Indicates source of the message
+enum Origin
+{
+    FRONTEND,
+    BACKEND
+}
+
 /// This struct encapculates
 /// message received and sent from the backend.
 /// It also keeps a buffer there, so messages
@@ -74,7 +81,7 @@ struct Message
 
         foreach (msg_type; MessageTypes)
         {
-            if (tag == msg_type.Tag)
+            if (tag == msg_type.Tag && msg_type.origin != Origin.FRONTEND)
             {
                 ret = msg_type(this.payload);
             }
@@ -202,6 +209,9 @@ struct AuthenticationMessage
     /// Sent as a first byte of a message
     enum Tag = 'R';
 
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
+
     /// Indicates type of authentication
     /// required/indicates success
     static enum AuthFormat
@@ -265,6 +275,9 @@ struct Md5PasswordMessage
     /// Sent as a first byte of a message
     enum Tag = 'p';
 
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
+
     /// Constructs a MD5 password responde message
     /// using the given password and salt
     static ubyte[] opCall(ref ubyte[] buf, string username, string password, int salt)
@@ -317,6 +330,9 @@ struct ParameterStatusMessage
     /// Sent as a first byte of a message
     enum Tag = 'S';
 
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
+
     /// name of the parameter
     public string name;
 
@@ -343,6 +359,9 @@ struct BackendKeyDataMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'K';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     /// process id of this backend
     public int process_id;
@@ -372,6 +391,9 @@ struct ReadyForQueryMessage
     /// Sent as a first byte of a message
     enum Tag = 'Z';
 
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
+
     /// transaction status indicator
     /// TODO: make enum
     public char transaction_status;
@@ -395,6 +417,9 @@ struct CloseMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'C';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     /// Type of the close message
     enum Type: char
@@ -443,6 +468,9 @@ struct ErrorMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'E';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     enum FieldType: char
     {
@@ -513,6 +541,9 @@ struct QueryMessage
 {
     public enum Tag = 'Q';
 
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
+
     /// Constructs a query message using the
     /// query string
     static ubyte[] opCall(ref ubyte[] buf, string query)
@@ -536,6 +567,9 @@ struct RowDescriptionMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'T';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     /// Number of fields in the row
     short number_of_fields;
@@ -629,6 +663,9 @@ struct DataRowMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'D';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     /// number of columns that follows
     short number_of_columns;
@@ -737,6 +774,9 @@ struct ParseMessage
 {
     public enum Tag = 'P';
 
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
+
     /// The name of the destination prepared statement (an empty string selects
     /// the unnamed prepared statement).
     public string prepared_statement_name;
@@ -780,6 +820,9 @@ struct ParseMessage
 struct BindMessage
 {
     public enum Tag = 'B';
+
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
 
     /// The name of the destination portal (an empty string selects the
     /// unnamed portal).
@@ -905,6 +948,9 @@ struct BindCompleteMessage
     /// Sent as a first byte of a message
     enum Tag = '2';
 
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
+
     /// generates parameter status message
     /// out of payload
     static auto opCall(Range)(Range payload)
@@ -918,6 +964,9 @@ struct BindCompleteMessage
 struct ExecuteMessage
 {
     public enum Tag = 'E';
+
+    /// Indicates that this message originates from frontend
+    public static Origin origin = Origin.FRONTEND;
 
     /// The name of the portal (an empty string selects the
     /// unnamed portal).
@@ -955,6 +1004,9 @@ struct CommandCompleteMessage
     /// Message type tag
     /// Sent as a first byte of a message
     enum Tag = 'C';
+
+    /// Indicates that this message originates from backend
+    public static Origin origin = Origin.BACKEND;
 
     /// The command tag. This is usually a single word that identifies which
     //SQL command was completed.
