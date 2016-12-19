@@ -204,7 +204,18 @@ struct Connection
                 value = msg.receiveOne(this);
                 row = value.peek!(message.DataRowMessage);
             }
+
+            // the last received message is not an DataRowMessage, so
+            // keep processing it out of the loop
+            response = value;
         }
+
+        enforce(response.peek!(message.CommandCompleteMessage),
+                "Expected CommandCompleteMessage");
+
+        response = msg.receiveOne(this);
+        enforce(response.peek!(message.ReadyForQueryMessage),
+                "Expected ReadyForQueryMessage");
     }
 
     /// Executes a complex query
