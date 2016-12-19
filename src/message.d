@@ -101,9 +101,12 @@ struct Message
 
         foreach (msg_type; MessageTypes)
         {
-            if (tag == msg_type.Tag && msg_type.origin != Origin.FRONTEND)
+            if (tag == msg_type.Tag)
             {
-                ret = msg_type(this.payload);
+                static if (msg_type.origin == Origin.BACKEND)
+                {
+                    mixin("ret = this.msg_" ~ msg_type.stringof ~ "(this.payload);");
+                }
             }
         }
 
