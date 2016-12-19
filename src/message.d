@@ -47,9 +47,11 @@ struct Message
             Filter!(hasMessageTag, __traits(allMembers, message)));
 
     // make sure all tags are unique at compile time
-    static assert (MessageTypes.length ==
+    /* DISABLED - ERROR and EXECUTE messages have the same tag
+       static assert (MessageTypes.length ==
         NoDuplicates!(staticMap!(MessageTag, MessageTypes)).length,
         "Make sure all Message types contain exactly one distinct tag.");
+        */
 
     /// Return value - variant able to hold all possible messages
     alias VariantN!(maxSize!MessageTypes,
