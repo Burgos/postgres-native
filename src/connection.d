@@ -219,7 +219,7 @@ struct Connection
     }
 
     /// Executes a complex query
-    public void query(Args) (string query_string, Args args...)
+    public void query(Args...) (string query_string, Args args)
     in
     {
         assert(this.state == State.READY_FOR_QUERY);
@@ -235,8 +235,16 @@ struct Connection
         message.DescribeMessage describemsg;
         message.BindMessage bindmsg;
         message.ExecuteMessage execmsg;
-        bindmsg.num_parameter_values = 1;
-        bindmsg.parameter_values = [LengthArray(cast(ubyte[])['1'])];
+        bindmsg.num_parameter_values = args.length;
+
+        LengthArray[args.length] values;
+        foreach (i, arg; args)
+        {
+            values[i] = LengthArray(cast(ubyte[])(
+                        to!string(arg).representation));
+        }
+
+        bindmsg.parameter_values  = values;
         message.SyncMessage sync;
         parsemsg.query_string = query_string;
 
