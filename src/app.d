@@ -12,7 +12,7 @@ void main()
             "test");
     conn.connect();
     writeln("\tExecuting extended query: ");
-    conn.query("SELECT * FROM stripovi WHERE id > $1", 1);
+    conn.query("SELECT * FROM stripovi WHERE id >= $1 and junak = $2", 1, "Zagor");
     writeln("\tExecuting normal query: ");
     conn.query("SELECT * FROM stripovi WHERE id > 1");
 }
