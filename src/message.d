@@ -75,7 +75,10 @@ struct Message
         string ret;
         foreach (type; types)
         {
-            ret ~= type.stringof ~ " msg_" ~ type.stringof ~ ";\n";
+            static if (type.origin == Origin.BACKEND)
+            {
+                ret ~= type.stringof ~ " msg_" ~ type.stringof ~ ";\n";
+            }
         }
 
         return ret;
@@ -229,7 +232,7 @@ struct AuthenticationMessage
     enum Tag = 'R';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// Indicates type of authentication
     /// required/indicates success
@@ -295,7 +298,7 @@ struct Md5PasswordMessage
     enum Tag = 'p';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// Constructs a MD5 password responde message
     /// using the given password and salt
@@ -351,7 +354,7 @@ struct ParameterStatusMessage
     enum Tag = 'S';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// name of the parameter
     public string name;
@@ -381,7 +384,7 @@ struct BackendKeyDataMessage
     enum Tag = 'K';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// process id of this backend
     public int process_id;
@@ -412,7 +415,7 @@ struct ReadyForQueryMessage
     enum Tag = 'Z';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// transaction status indicator
     /// TODO: make enum
@@ -439,7 +442,7 @@ struct CloseMessage
     enum Tag = 'C';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// Type of the close message
     enum Type: char
@@ -490,7 +493,7 @@ struct ErrorMessage
     enum Tag = 'E';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     enum FieldType: char
     {
@@ -562,7 +565,7 @@ struct QueryMessage
     public enum Tag = 'Q';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// Constructs a query message using the
     /// query string
@@ -589,7 +592,7 @@ struct RowDescriptionMessage
     enum Tag = 'T';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// Number of fields in the row
     short number_of_fields;
@@ -685,7 +688,7 @@ struct DataRowMessage
     enum Tag = 'D';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// number of columns that follows
     short number_of_columns;
@@ -796,7 +799,7 @@ struct ParseMessage
     public enum Tag = 'P';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// The name of the destination prepared statement (an empty string selects
     /// the unnamed prepared statement).
@@ -843,7 +846,7 @@ struct BindMessage
     public enum Tag = 'B';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// The name of the destination portal (an empty string selects the
     /// unnamed portal).
@@ -970,7 +973,7 @@ struct ParseCompleteMessage
     enum Tag = '1';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// generates parameter status message
     /// out of payload
@@ -988,7 +991,7 @@ struct BindCompleteMessage
     enum Tag = '2';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// generates parameter status message
     /// out of payload
@@ -1005,7 +1008,7 @@ struct DescribeMessage
     public enum Tag = 'D';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     enum Type: ubyte
     {
@@ -1046,7 +1049,7 @@ struct ExecuteMessage
     public enum Tag = 'E';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// The name of the portal (an empty string selects the
     /// unnamed portal).
@@ -1086,7 +1089,7 @@ struct CommandCompleteMessage
     enum Tag = 'C';
 
     /// Indicates that this message originates from backend
-    public static Origin origin = Origin.BACKEND;
+    enum origin = Origin.BACKEND;
 
     /// The command tag. This is usually a single word that identifies which
     //SQL command was completed.
@@ -1110,7 +1113,7 @@ struct SyncMessage
     public enum Tag = 'S';
 
     /// Indicates that this message originates from frontend
-    public static Origin origin = Origin.FRONTEND;
+    enum origin = Origin.FRONTEND;
 
     /// Constructs a Sync message
     static ubyte[] opCall(ref ubyte[] buf, SyncMessage msg)
