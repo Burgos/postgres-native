@@ -48,6 +48,9 @@ struct Connection
     /// message construction buffer
     private ubyte[] payload;
 
+    /// Message parse buffer
+    Message msg;
+
     @disable this();
 
     /// Creates the connection object.
@@ -114,8 +117,6 @@ struct Connection
         enforce(this.state == State.init, "Connection already initialized");
         this.connect_socket();
 
-        Message msg;
-
         // send startup message and wait for the response
         this.send(msg.sendStartup(this.database, this.username));
         auto response = msg.receiveOne(this);
@@ -175,7 +176,6 @@ struct Connection
     body
     {
         // TODO: make receiveOne static
-        Message msg;
         this.send(message.QueryMessage(this.payload, query_string));
         auto response = msg.receiveOne(this);
 
@@ -230,7 +230,6 @@ struct Connection
         import std.string;
 
         // TODO: make receiveOne static
-        Message msg;
         message.ParseMessage parsemsg;
         message.DescribeMessage describemsg;
         message.BindMessage bindmsg;
