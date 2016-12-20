@@ -634,8 +634,7 @@ struct RowDescriptionMessage
         this.number_of_fields = read!short(payload);
 
         this.fields.length = 0;
-        assumeSafeAppend(this.fields);
-
+        this.fields.assumeSafeAppend;
         this.fields.length = this.number_of_fields;
 
         for (auto i = 0; i < this.number_of_fields; i++)
@@ -712,13 +711,15 @@ struct DataRowMessage
 
         for (auto i = 0; i < this.number_of_columns; i++)
         {
-            Column col;
-
+            auto col = &this.columns[i];
             col.length = read!int(payload);
-            col.value = payload.take(col.length).array;
-            payload = payload.drop(col.length);
 
-            this.columns[i] = col;
+            auto value = payload.take(col.length);
+            col.value.length = 0;
+            col.value.assumeSafeAppend.length = value.length;
+            col.value[0..$] = value[0..$];
+
+            payload = payload.drop(col.length);
         }
 
         debug (verbose)
