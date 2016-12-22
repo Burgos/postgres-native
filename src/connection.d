@@ -197,9 +197,9 @@ struct Connection
                 {
                     if (rows.fields[i].format == rows.Field.Format.TEXT)
                     {
-                        debug (verbose)
+                        debug (PrintResults)
                         {
-                            writeln(rows.fields[i].name, ": ", to!string(cast(char[])c.value));
+                            writeln(rows.fields[i].name, ": ", c.value);
                         }
                     }
                 }
@@ -282,7 +282,7 @@ struct Connection
                 {
                     if (rows.fields[i].format == rows.Field.Format.TEXT)
                     {
-                        debug (verbose)
+                        debug (PrintResults)
                         {
                             writeln(rows.fields[i].name, ": ", c.value);
                         }
