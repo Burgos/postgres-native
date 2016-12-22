@@ -118,7 +118,7 @@ struct Message
         {
             writeln("Tag: ", tag);
             writeln("Length: ", len);
-            writefln("Payload: %(%x, %)", payload);
+            writefln("Payload: %(%x, %)", this.payload_app.data);
             writefln("Message: %s", ret);
         }
 
@@ -142,7 +142,7 @@ struct Message
                 "database", database,
                 "user", username);
 
-        debug (verbose) writeln("Payload: ", payload);
+        debug (verbose) writeln("Payload: ", this.payload_app.data);
         return app.data;
     }
 
@@ -630,7 +630,7 @@ struct RowDescriptionMessage
 
     private Field[] raw_fields;
 
-    public const(Field)[] fields() @property
+    public Field[] fields() @property
     {
         return this.raw_fields[0..this.number_of_fields];
     }
@@ -714,7 +714,7 @@ struct DataRowMessage
 
     private Column[] raw_columns;
 
-    public const(Column)[] columns() @property
+    public Column[] columns() @property
     {
         return this.raw_columns[0 .. this.number_of_columns];
     }
