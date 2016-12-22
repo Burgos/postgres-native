@@ -323,12 +323,16 @@ struct Connection
         }
     }
 
+    /// Receive buffer
+    const chunk_size = 1024;
+
+    /// ditto
+    ubyte[chunk_size] receive_buf;
+
+
     public ptrdiff_t receive (ref Appender!(ubyte[]) app,
             size_t bytes_need)
     {
-        const chunk_size = 256;
-        ubyte[chunk_size] buf;
-
         ptrdiff_t received = 0;
 
         while (received < bytes_need)
@@ -336,7 +340,7 @@ struct Connection
             auto need = bytes_need - received;
             auto recv = need > chunk_size ? chunk_size : need;
 
-            auto ret = this.sock.receive(buf[0..need]);
+            auto ret = this.sock.receive(this.receive_buf[0..need]);
 
             if (ret == Socket.ERROR)
             {
@@ -344,7 +348,7 @@ struct Connection
                 return ret;
             }
 
-            app.put(buf[0..need]);
+            app.put(this.receive_buf[0..need]);
 
             received += need;
         }
