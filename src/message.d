@@ -96,9 +96,10 @@ struct Message
         c.receive(len);
 
         // Receive payload
-        payload.length = 0;
-        payload.assumeSafeAppend.length = len - len.sizeof;
-        c.receive(payload);
+        payload_app.clear();
+        auto size = len - len.sizeof;
+        payload_app.reserve(size);
+        c.receive(payload_app, size);
 
         foreach (msg_type; MessageTypes)
         {
@@ -106,7 +107,7 @@ struct Message
             {
                 static if (msg_type.origin == Origin.BACKEND)
                 {
-                    mixin("ret = this.msg_" ~ msg_type.stringof ~ "(this.payload);");
+                    mixin("ret = this.msg_" ~ msg_type.stringof ~ "(this.payload_app.data);");
                 }
             }
         }
@@ -135,7 +136,7 @@ struct Message
 
         Appender!(ubyte[]) app;
         app.reserve(256);
-        this.payload = this.constructMessage!(true)(app,
+        this.constructMessage!(true)(app,
                 char.init, // startup message, no type
                 protocol,
                 "database", database,
@@ -228,7 +229,8 @@ struct Message
         return app.data;
     }
 
-    private ubyte[] payload; }
+    private Appender!(ubyte[]) payload_app;
+}
 
 struct AuthenticationMessage
 {

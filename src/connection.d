@@ -323,20 +323,46 @@ struct Connection
         }
     }
 
-    public ptrdiff_t receive (void[] buf)
+    public ptrdiff_t receive (ref Appender!(ubyte[]) app,
+            size_t bytes_need)
     {
-        auto ret = this.sock.receive(buf);
-        if (ret == Socket.ERROR)
+        const chunk_size = 256;
+        ubyte[chunk_size] buf;
+
+        ptrdiff_t received = 0;
+
+        while (received < buf.sizeof)
         {
-            writeln("Failed to receive from socket: ", this.sock.getErrorText());
+            auto need = buf.sizeof - received;
+            auto recv = need > buf.sizeof ? buf.sizeof : need;
+
+            auto ret = this.sock.receive(buf[0..need]);
+
+            if (ret == Socket.ERROR)
+            {
+                writeln("Failed to receive from socket: ", this.sock.getErrorText());
+                return ret;
+            }
+
+            app.put(buf[0..need]);
+
+            received += need;
         }
-        return ret;
+
+        return received;
     }
 
     public ptrdiff_t receive(T) (ref T t)
     {
         ubyte[T.sizeof] buf;
-        auto ret = this.receive(buf);
+        auto ret = this.sock.receive(buf);
+
+        if (ret == Socket.ERROR)
+        {
+            writeln("Failed to receive from socket: ", this.sock.getErrorText());
+            return ret;
+        }
+
         t = bigEndianToNative!(T, T.sizeof)(buf);
         return ret;
     }
