@@ -596,7 +596,7 @@ struct RowDescriptionMessage
     struct Field
     {
         /// field name
-        string name;
+        Appender!(ubyte[]) name;
 
         /// table id
         int table_id;
@@ -640,10 +640,11 @@ struct RowDescriptionMessage
         for (auto i = 0; i < this.number_of_fields; i++)
         {
             import std.algorithm.searching: until;
-            Field field;
+            auto field = &this.fields[i];
 
-            field.name = to!string(cast(char[])payload.until(0).array);
-            payload = payload.drop(field.name.length + 1);
+            field.name.clear();
+            field.name.put(payload.until(0));
+            payload = payload.drop(field.name.data.length + 1);
 
             field.table_id = read!int(payload);
             field.column_id = read!short(payload);
@@ -652,7 +653,6 @@ struct RowDescriptionMessage
             field.data_type_mod = read!int(payload);
 
             field.format = cast(Field.Format)read!short(payload);
-            this.fields[i] = field;
         }
 
         debug (verbose)
@@ -695,7 +695,12 @@ struct DataRowMessage
         int length;
 
         /// Value in the specified format by RowDescriptionMessage
-        ubyte[] value;
+        Appender!(ubyte[]) raw_value;
+
+        string value () @property
+        {
+            return cast(string)raw_value.data;
+        }
     }
 
     Column[] columns;
@@ -715,10 +720,8 @@ struct DataRowMessage
             col.length = read!int(payload);
 
             auto value = payload.take(col.length);
-            col.value.length = 0;
-            col.value.assumeSafeAppend.length = value.length;
-            col.value[0..$] = value[0..$];
-
+            col.raw_value.clear();
+            col.raw_value.put(payload.take(col.length));
             payload = payload.drop(col.length);
         }
 

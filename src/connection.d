@@ -284,7 +284,7 @@ struct Connection
                     {
                         debug (verbose)
                         {
-                            writeln(rows.fields[i].name, ": ", to!string(cast(char[])c.value));
+                            writeln(rows.fields[i].name, ": ", c.value);
                         }
                     }
                 }
