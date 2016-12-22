@@ -96,7 +96,8 @@ struct Message
         c.receive(len);
 
         // Receive payload
-        payload.length = len - len.sizeof;
+        payload.length = 0;
+        payload.assumeSafeAppend.length = len - len.sizeof;
         c.receive(payload);
 
         foreach (msg_type; MessageTypes)
