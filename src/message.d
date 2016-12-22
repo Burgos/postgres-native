@@ -1100,14 +1100,20 @@ struct CommandCompleteMessage
 
     /// The command tag. This is usually a single word that identifies which
     //SQL command was completed.
-    public string tag;
+    private Appender!(ubyte[]) raw_tag;
+
+    public string tag() @property
+    {
+        return cast(string)raw_tag.data;
+    }
 
     /// generates RowDescription message
     /// out of payload
     auto opCall(Range)(Range payload)
     {
         import std.algorithm.searching: until;
-        this.tag = to!string(cast(char[])payload.until(0).array);
+        this.raw_tag.clear();
+        this.raw_tag.put(payload.until(0));
         return this;
     }
 }
