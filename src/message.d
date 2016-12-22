@@ -599,7 +599,13 @@ struct RowDescriptionMessage
     struct Field
     {
         /// field name
-        Appender!(ubyte[]) name;
+        private Appender!(ubyte[]) raw_name;
+
+        /// ditto
+        public string name() @property
+        {
+            return cast(string)raw_name.data;
+        }
 
         /// table id
         int table_id;
@@ -651,9 +657,9 @@ struct RowDescriptionMessage
             import std.algorithm.searching: until;
             auto field = &this.raw_fields[i];
 
-            field.name.clear();
-            field.name.put(payload.until(0));
-            payload = payload.drop(field.name.data.length + 1);
+            field.raw_name.clear();
+            field.raw_name.put(payload.until(0));
+            payload = payload.drop(field.raw_name.data.length + 1);
 
             field.table_id = read!int(payload);
             field.column_id = read!short(payload);
