@@ -331,10 +331,10 @@ struct Connection
 
         ptrdiff_t received = 0;
 
-        while (received < buf.sizeof)
+        while (received < bytes_need)
         {
-            auto need = buf.sizeof - received;
-            auto recv = need > buf.sizeof ? buf.sizeof : need;
+            auto need = bytes_need - received;
+            auto recv = need > chunk_size ? chunk_size : need;
 
             auto ret = this.sock.receive(buf[0..need]);
 
