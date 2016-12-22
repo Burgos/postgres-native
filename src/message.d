@@ -132,14 +132,16 @@ struct Message
         int protocol = ~0;
         protocol &= protocol_major << 16 | protocol_minor;
 
-        this.payload = this.constructMessage!(true)(this.payload,
+        Appender!(ubyte[]) app;
+        app.reserve(256);
+        this.payload = this.constructMessage!(true)(app,
                 char.init, // startup message, no type
                 protocol,
                 "database", database,
                 "user", username);
 
         debug (verbose) writeln("Payload: ", payload);
-        return this.payload;
+        return app.data;
     }
 
     /// Packs the message ready for send into an provided array
@@ -152,12 +154,11 @@ struct Message
     ///     type = message type (0 for no type)
     ///     args = args to pack
     static ubyte[] constructMessage(alias final_terminator = false,
-            Args...)(ref ubyte[] buf, char type, Args args)
+            Args...)(ref Appender!(ubyte[]) app, char type, Args args)
     {
         import std.traits;
 
-        buf.length = 0;
-        auto app = appender(&buf);
+        app.clear();
 
         // message type
         if (type != char.init)
@@ -221,9 +222,9 @@ struct Message
             app.append(cast(ubyte)0);
 
         // set the payload length
-        buf.write!int(cast(int)(buf.length - (type != char.init ? char.sizeof : 0)),
+        app.data.write!int(cast(int)(app.data.length - (type != char.init ? char.sizeof : 0)),
                 (type != char.init ? 1 : 0));
-        return buf;
+        return app.data;
     }
 
     private ubyte[] payload; }
@@ -304,12 +305,12 @@ struct Md5PasswordMessage
 
     /// Constructs a MD5 password responde message
     /// using the given password and salt
-    static ubyte[] opCall(ref ubyte[] buf, string username, string password, int salt)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, string username, string password, int salt)
     {
-        return Md5PasswordMessage(buf, username, password, (cast(ubyte*)&salt)[0..int.sizeof]);
+        return Md5PasswordMessage(app, username, password, (cast(ubyte*)&salt)[0..int.sizeof]);
     }
 
-    static ubyte[] opCall(ref ubyte[] buf, string username, string password, ubyte[] salt)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, string username, string password, ubyte[] salt)
     {
         ubyte[32 + 4] hash_buf; // md5+password string
 
@@ -320,8 +321,8 @@ struct Md5PasswordMessage
                 ).toHexString!(LetterCase.lower).representation;
         hash_buf[$-1..$] = cast(ubyte)0;
 
-        Message.constructMessage(buf, Tag, hash_buf[]);
-        return buf;
+        Message.constructMessage(app, Tag, hash_buf[]);
+        return app.data;
     }
 
     /// Dummy opCall, needed to satisfy message-generic
@@ -337,14 +338,14 @@ struct Md5PasswordMessage
     unittest
     {
         ubyte[] buf;
-        Md5PasswordMessage(buf, "burgos", "test-pass", [0x91, 0x47, 0x28, 0x72]);
+        Md5PasswordMessage(app, "burgos", "test-pass", [0x91, 0x47, 0x28, 0x72]);
 
         ubyte[] expected = [0x70, 0x00, 0x00, 0x00, 0x28, 0x6d, 0x64, 0x35,
             0x37, 0x35, 0x33, 0x65, 0x62, 0x31, 0x64, 0x31, 0x36, 0x38, 0x39,
             0x32, 0x32, 0x32, 0x35, 0x37, 0x37, 0x39, 0x31, 0x32, 0x35, 0x63,
             0x32, 0x39, 0x66, 0x39, 0x62, 0x30, 0x32, 0x34, 0x37, 0x64, 0x00];
 
-        assert (buf == expected);
+        assert (app == expected);
     }
 }
 
@@ -564,10 +565,9 @@ struct QueryMessage
 
     /// Constructs a query message using the
     /// query string
-    static ubyte[] opCall(ref ubyte[] buf, string query)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, string query)
     {
-        Message.constructMessage(buf, Tag, query);
-        return buf;
+        return Message.constructMessage(app, Tag, query);
     }
 
     /// Dummy opCall, needed to satisfy message-generic
@@ -817,15 +817,13 @@ struct ParseMessage
     public TypeOID[] data_types = [TypeOID.NOT_SPECIFIED];
 
     /// Constructs a Parse message
-    static ubyte[] opCall(ref ubyte[] buf, ParseMessage msg)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, ParseMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        return Message.constructMessage(app, Tag,
                 msg.prepared_statement_name,
                 msg.query_string,
                 msg.num_data_types);
                 //0);///msg.data_types);*/
-
-        return buf;
     }
 
     /// Dummy opCall, needed to satisfy message-generic
@@ -890,9 +888,9 @@ struct BindMessage
     public FormatCodes[] result_format_codes;
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref ubyte[] buf, BindMessage msg)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, BindMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        return Message.constructMessage(app, Tag,
                 msg.dest_portal_name,
                 msg.source_prep_stmt_name,
                 msg.num_format_codes,
@@ -901,8 +899,6 @@ struct BindMessage
                 msg.parameter_values,
                 msg.num_result_format_codes,
                 msg.result_format_codes);
-
-        return buf;
     }
 
     version (unittest)
@@ -929,13 +925,13 @@ struct BindMessage
             FormatCodes.TEXT];
 
         ubyte[] buf;
-        BindMessage(buf, msg);
+        BindMessage(app, msg);
 
-        assert(buf[0] == cast(ubyte)BindMessage.Tag);
-        assert(buf[5] == msg.dest_portal_name.representation[0]);
-        assert(buf[6] == 0);
-        assert(buf[7] == msg.source_prep_stmt_name.representation[0]);
-        assert(buf[8] == 0);
+        assert(app[0] == cast(ubyte)BindMessage.Tag);
+        assert(app[5] == msg.dest_portal_name.representation[0]);
+        assert(app[6] == 0);
+        assert(app[7] == msg.source_prep_stmt_name.representation[0]);
+        assert(app[8] == 0);
 
         auto r = buf[9..$];
         assert(read!short(r) == msg.num_format_codes);
@@ -1021,13 +1017,11 @@ struct DescribeMessage
 
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref ubyte[] buf, DescribeMessage msg)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, DescribeMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        return Message.constructMessage(app, Tag,
                 msg.type,
                 msg.name);
-
-        return buf;
     }
 
     /// Dummy opCall, needed to satisfy message-generic
@@ -1057,13 +1051,11 @@ struct ExecuteMessage
 
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref ubyte[] buf, ExecuteMessage msg)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, ExecuteMessage msg)
     {
-        Message.constructMessage(buf, Tag,
+        return Message.constructMessage(app, Tag,
                 msg.portal_name,
                 msg.max_rows);
-
-        return buf;
     }
 
     /// Dummy opCall, needed to satisfy message-generic
@@ -1110,10 +1102,9 @@ struct SyncMessage
     enum origin = Origin.FRONTEND;
 
     /// Constructs a Sync message
-    static ubyte[] opCall(ref ubyte[] buf, SyncMessage msg)
+    static ubyte[] opCall(ref Appender!(ubyte[]) app, SyncMessage msg)
     {
-        Message.constructMessage(buf, Tag);
-        return buf;
+        return Message.constructMessage(app, Tag);
     }
 
     /// Dummy opCall, needed to satisfy message-generic

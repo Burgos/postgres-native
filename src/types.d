@@ -20,7 +20,7 @@ struct LengthArray
     public Nullable!(ubyte[]) value;
 
     /// Serializes this over into the stream for the network
-    public void append (RefAppender!(ubyte[]) app)
+    public void append (ref Appender!(ubyte[]) app)
     {
         if (value.isNull)
         {

@@ -10,6 +10,7 @@ import std.stdio;
 import std.exception;
 import std.conv;
 import std.variant;
+import std.array: Appender;
 
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
@@ -46,7 +47,7 @@ struct Connection
     public State state;
 
     /// message construction buffer
-    private ubyte[] payload;
+    private Appender!(ubyte[]) payload_appender;
 
     /// Message parse buffer
     Message msg;
@@ -83,6 +84,9 @@ struct Connection
         {
             throw new Exception("Unsupported family type.");
         }
+
+        const msg_size = 512;
+        this.payload_appender.reserve(msg_size);
     }
 
     public ~this()
@@ -129,7 +133,7 @@ struct Connection
         {
             if (auth_msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
             {
-                this.send(Md5PasswordMessage(this.payload, this.username,
+                this.send(Md5PasswordMessage(this.payload_appender, this.username,
                             this.password, auth_msg.salt.md5_salt));
             }
             else
@@ -176,7 +180,7 @@ struct Connection
     body
     {
         // TODO: make receiveOne static
-        this.send(message.QueryMessage(this.payload, query_string));
+        this.send(message.QueryMessage(this.payload_appender, query_string));
         auto response = msg.receiveOne(this);
 
         if (auto rows = response.peek!(message.RowDescriptionMessage))
@@ -247,11 +251,11 @@ struct Connection
         message.SyncMessage sync;
         parsemsg.query_string = query_string;
 
-        this.send(message.ParseMessage(this.payload, parsemsg));
-        this.send(message.BindMessage(this.payload, bindmsg));
-        this.send(message.DescribeMessage(this.payload, describemsg));
-        this.send(message.ExecuteMessage(this.payload, execmsg));
-        this.send(message.SyncMessage(this.payload, sync));
+        this.send(message.ParseMessage(this.payload_appender, parsemsg));
+        this.send(message.BindMessage(this.payload_appender, bindmsg));
+        this.send(message.DescribeMessage(this.payload_appender, describemsg));
+        this.send(message.ExecuteMessage(this.payload_appender, execmsg));
+        this.send(message.SyncMessage(this.payload_appender, sync));
 
         auto response = msg.receiveOne(this);
         enforce(response.peek!(message.ParseCompleteMessage),
