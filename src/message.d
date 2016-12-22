@@ -625,7 +625,12 @@ struct RowDescriptionMessage
         Format format;
     }
 
-    Field[] fields;
+    private Field[] raw_fields;
+
+    public const(Field)[] fields() @property
+    {
+        return this.raw_fields[0..this.number_of_fields];
+    }
 
     /// generates RowDescription message
     /// out of payload
@@ -633,14 +638,15 @@ struct RowDescriptionMessage
     {
         this.number_of_fields = read!short(payload);
 
-        this.fields.length = 0;
-        this.fields.assumeSafeAppend;
-        this.fields.length = this.number_of_fields;
+        if (this.raw_fields.length < this.number_of_fields)
+        {
+            this.raw_fields.length = this.number_of_fields;
+        }
 
         for (auto i = 0; i < this.number_of_fields; i++)
         {
             import std.algorithm.searching: until;
-            auto field = &this.fields[i];
+            auto field = &this.raw_fields[i];
 
             field.name.clear();
             field.name.put(payload.until(0));
@@ -703,20 +709,27 @@ struct DataRowMessage
         }
     }
 
-    Column[] columns;
+    private Column[] raw_columns;
+
+    public const(Column)[] columns() @property
+    {
+        return this.raw_columns[0 .. this.number_of_columns];
+    }
 
     /// generates RowDescription message
     /// out of payload
     auto opCall(Range)(Range payload)
     {
         this.number_of_columns = read!short(payload);
-        this.columns.length = 0;
-        assumeSafeAppend(this.columns);
-        this.columns.length = this.number_of_columns;
+
+        if (this.raw_columns.length < this.number_of_columns)
+        {
+            this.raw_columns.length = this.number_of_columns;
+        }
 
         for (auto i = 0; i < this.number_of_columns; i++)
         {
-            auto col = &this.columns[i];
+            auto col = &this.raw_columns[i];
             col.length = read!int(payload);
 
             auto value = payload.take(col.length);
