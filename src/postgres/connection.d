@@ -43,27 +43,6 @@ struct ResultSet
         return !has_more;
     }
 
-    int opApply(scope int delegate(ref PostgresRow) pr)
-    {
-        int result = 0;
-
-        for (;;)
-        {
-            if (this.empty)
-                return result;
-
-            result = pr(pg_row);
-            if (result)
-            {
-                break;
-            }
-
-            this.has_more = this.getNextRow(this.pg_row);
-        }
-
-        return result;
-    }
-
     private PostgresRow pg_row;
 
     private bool delegate(ref PostgresRow) getNextRow;
