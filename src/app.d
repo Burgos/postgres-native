@@ -36,5 +36,12 @@ void main(string[] args)
                     import std.stdio;
                     writeln(row.toStruct!Result);
                 });
+
+        auto range = conn.queryRange("SELECT * FROM stripovi WHERE id >= 1");
+
+        foreach (row; range)
+        {
+            writeln(row.toStruct!Result);
+        }
     }
 }

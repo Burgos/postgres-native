@@ -13,6 +13,65 @@ import std.variant;
 import std.array: Appender;
 import postgres.row;
 
+/// Range for returning the results
+/// from queryRange
+struct ResultSet
+{
+    @property PostgresRow front()
+    {
+        return this.pg_row;
+    }
+
+    @property void popFront()
+    {
+        this.has_more = this.getNextRow(pg_row);
+    }
+
+    @property bool empty()
+    {
+        if (&this.getNextRow is null)
+        {
+            return true;
+        }
+
+        if (!this.initialised)
+        {
+            this.has_more = this.getNextRow(pg_row);
+            this.initialised = true;
+        }
+
+        return !has_more;
+    }
+
+    int opApply(scope int delegate(ref PostgresRow) pr)
+    {
+        int result = 0;
+
+        for (;;)
+        {
+            if (this.empty)
+                return result;
+
+            result = pr(pg_row);
+            if (result)
+            {
+                break;
+            }
+
+            this.has_more = this.getNextRow(this.pg_row);
+        }
+
+        return result;
+    }
+
+    private PostgresRow pg_row;
+
+    private bool delegate(ref PostgresRow) getNextRow;
+    private bool has_more;
+    private bool initialised;
+}
+
+
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
 struct Connection
@@ -237,6 +296,67 @@ struct Connection
         response = msg.receiveOne(this);
         enforce(response.peek!(ReadyForQueryMessage),
                 "Expected ReadyForQueryMessage");
+    }
+
+    /// Executes a query and returns range of PostgresRows
+    public ResultSet queryRange (string query_string)
+    in
+    {
+        assert(this.state == State.READY_FOR_QUERY);
+    }
+    body
+    {
+        import postgres.message:
+            QueryMessage,
+            RowDescriptionMessage,
+            DataRowMessage,
+            CommandCompleteMessage,
+            ReadyForQueryMessage;
+
+        // TODO: make receiveOne static
+        this.send(QueryMessage(this.payload_appender, query_string));
+        auto response = msg.receiveOne(this);
+
+        if (auto rows = response.peek!(RowDescriptionMessage))
+        {
+            ResultSet set;
+
+            postgres.message.Message.ParsedMessage value;
+            postgres.message.DataRowMessage* raw_row;
+
+            bool getNextRow(ref PostgresRow row)
+            {
+                // receive row. Receive first time
+                value = msg.receiveOne(this);
+                raw_row = value.peek!(DataRowMessage);
+
+                if (raw_row)
+                {
+                    row.init(rows.fields, raw_row.columns);
+                    return true;
+                }
+                else
+                {
+                    // the last received message is not an DataRowMessage, so
+                    // keep processing it out of the loop
+                    response = value;
+
+                    enforce(response.peek!(CommandCompleteMessage),
+                            "Expected CommandCompleteMessage");
+
+                    response = msg.receiveOne(this);
+                    enforce(response.peek!(ReadyForQueryMessage),
+                            "Expected ReadyForQueryMessage");
+
+                    return false;
+                }
+            }
+
+            set.getNextRow = &getNextRow;
+            return set;
+        }
+
+        return ResultSet.init;
     }
 
     /// Executes a complex query
