@@ -1,3 +1,5 @@
+module postgres.types;
+
 /// Types definition to send over on wire 
 /// Copyright: Copyright (c) 2016 Nemanja Boric
 

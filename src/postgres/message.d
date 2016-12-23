@@ -1,9 +1,9 @@
 /// Message received from Postgres
 /// Copyright: Copyright (c) 2016 Nemanja Boric
-module message;
+module postgres.message;
 
-import connection;
-import types;
+import postgres.connection;
+import postgres.types;
 
 import std.range;
 import std.conv;
@@ -42,16 +42,16 @@ struct Message
 
     /// Gets the message struct from the string
     alias getMessageStruct (alias S) =
-        Identity!(__traits(getMember, message, S));
+        Identity!(__traits(getMember, postgres.message, S));
 
     /// Checks if the struct is tagged with a field
     /// named Tag
     enum hasMessageTag(alias S) =
-        is (typeof(MessageTag!(__traits(getMember, message, S))));
+        is (typeof(MessageTag!(__traits(getMember, postgres.message, S))));
 
     /// List of all message types
     alias MessageTypes = staticMap!(getMessageStruct,
-            Filter!(hasMessageTag, __traits(allMembers, message)));
+            Filter!(hasMessageTag, __traits(allMembers, postgres.message)));
 
     // make sure all tags are unique at compile time
     /* DISABLED - ERROR and EXECUTE messages have the same tag

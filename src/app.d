@@ -2,8 +2,7 @@ module app;
 
 void main(string[] args)
 {
-    import message;
-    import connection;
+    import postgres.connection;
     import std.stdio;
     import std.conv;
 

@@ -1,8 +1,8 @@
 /// Postgresql connection protocol
 /// Copyright: Copyright (c) 2016 Nemanja Boric
-module connection;
+module postgres.connection;
 
-import message;
+import postgres.message;
 
 import std.bitmanip;
 import std.socket;
@@ -179,17 +179,24 @@ struct Connection
     }
     body
     {
+        import postgres.message:
+            QueryMessage,
+            RowDescriptionMessage,
+            DataRowMessage,
+            CommandCompleteMessage,
+            ReadyForQueryMessage;
+
         // TODO: make receiveOne static
-        this.send(message.QueryMessage(this.payload_appender, query_string));
+        this.send(QueryMessage(this.payload_appender, query_string));
         auto response = msg.receiveOne(this);
 
-        if (auto rows = response.peek!(message.RowDescriptionMessage))
+        if (auto rows = response.peek!(RowDescriptionMessage))
         {
             debug (verbose) writeln("Got a RowDescription, getting fields");
 
             // receive rows
             auto value = msg.receiveOne(this);
-            auto row = value.peek!(message.DataRowMessage);
+            auto row = value.peek!(DataRowMessage);
 
             while (row)
             {
@@ -206,7 +213,7 @@ struct Connection
 
                 // receive next
                 value = msg.receiveOne(this);
-                row = value.peek!(message.DataRowMessage);
+                row = value.peek!(DataRowMessage);
             }
 
             // the last received message is not an DataRowMessage, so
@@ -214,11 +221,11 @@ struct Connection
             response = value;
         }
 
-        enforce(response.peek!(message.CommandCompleteMessage),
+        enforce(response.peek!(CommandCompleteMessage),
                 "Expected CommandCompleteMessage");
 
         response = msg.receiveOne(this);
-        enforce(response.peek!(message.ReadyForQueryMessage),
+        enforce(response.peek!(ReadyForQueryMessage),
                 "Expected ReadyForQueryMessage");
     }
 
@@ -230,14 +237,25 @@ struct Connection
     }
     body
     {
-        import types;
+        import postgres.types;
         import std.string;
+        import postgres.message: ParseMessage,
+               DescribeMessage,
+               BindMessage,
+               ExecuteMessage,
+               SyncMessage,
+               ParseCompleteMessage,
+               BindCompleteMessage,
+               RowDescriptionMessage,
+               DataRowMessage,
+               CommandCompleteMessage,
+               ReadyForQueryMessage;
 
         // TODO: make receiveOne static
-        message.ParseMessage parsemsg;
-        message.DescribeMessage describemsg;
-        message.BindMessage bindmsg;
-        message.ExecuteMessage execmsg;
+        ParseMessage parsemsg;
+        DescribeMessage describemsg;
+        BindMessage bindmsg;
+        ExecuteMessage execmsg;
         bindmsg.num_parameter_values = args.length;
 
         LengthArray[args.length] values;
@@ -248,33 +266,33 @@ struct Connection
         }
 
         bindmsg.parameter_values  = values;
-        message.SyncMessage sync;
+        SyncMessage sync;
         parsemsg.query_string = query_string;
 
-        this.send(message.ParseMessage(this.payload_appender, parsemsg));
-        this.send(message.BindMessage(this.payload_appender, bindmsg));
-        this.send(message.DescribeMessage(this.payload_appender, describemsg));
-        this.send(message.ExecuteMessage(this.payload_appender, execmsg));
-        this.send(message.SyncMessage(this.payload_appender, sync));
+        this.send(ParseMessage(this.payload_appender, parsemsg));
+        this.send(BindMessage(this.payload_appender, bindmsg));
+        this.send(DescribeMessage(this.payload_appender, describemsg));
+        this.send(ExecuteMessage(this.payload_appender, execmsg));
+        this.send(SyncMessage(this.payload_appender, sync));
 
         auto response = msg.receiveOne(this);
-        enforce(response.peek!(message.ParseCompleteMessage),
+        enforce(response.peek!(ParseCompleteMessage),
                 "Expected ParseCompleteMessage");
 
         response = msg.receiveOne(this);
-        enforce(response.peek!(message.BindCompleteMessage),
+        enforce(response.peek!(BindCompleteMessage),
                 "Expected BindCompleteMessage");
 
 
         response = msg.receiveOne(this);
 
-        if (auto rows = response.peek!(message.RowDescriptionMessage))
+        if (auto rows = response.peek!(RowDescriptionMessage))
         {
             debug (verbose) writeln("Got a RowDescription, getting fields");
 
             // receive rows
             auto value = msg.receiveOne(this);
-            auto row = value.peek!(message.DataRowMessage);
+            auto row = value.peek!(DataRowMessage);
 
             while (row)
             {
@@ -291,7 +309,7 @@ struct Connection
 
                 // receive next
                 value = msg.receiveOne(this);
-                row = value.peek!(message.DataRowMessage);
+                row = value.peek!(DataRowMessage);
             }
 
             // The last one isn't the DataRowMessage, parse
@@ -299,11 +317,11 @@ struct Connection
             response = value;
         }
 
-        enforce(response.peek!(message.CommandCompleteMessage),
+        enforce(response.peek!(CommandCompleteMessage),
                 "Expected CommandCompleteMessage");
 
         response = msg.receiveOne(this);
-        enforce(response.peek!(message.ReadyForQueryMessage),
+        enforce(response.peek!(ReadyForQueryMessage),
                 "Expected ReadyForQueryMessage");
     }
 
