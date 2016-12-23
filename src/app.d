@@ -3,6 +3,7 @@ module app;
 void main(string[] args)
 {
     import postgres.connection;
+    import postgres.row;
     import std.stdio;
     import std.conv;
 
@@ -18,10 +19,22 @@ void main(string[] args)
         num_iterations = to!(int)(args[1]);
     }
 
+    struct Result
+    {
+        int id;
+        @as("junak")
+        string glavni_junak;
+        string naslov;
+    }
 
     for(int i = 0; i < num_iterations; i++)
     {
         conn.query("SELECT * FROM stripovi WHERE id >= $1 and junak = $2", 1, "Zagor");
-        conn.query("SELECT * FROM stripovi WHERE id >= 1");
+        conn.query("SELECT * FROM stripovi WHERE id > 1",
+                (PostgresRow row)
+                {
+                    import std.stdio;
+                    writeln(row.toStruct!Result);
+                });
     }
 }

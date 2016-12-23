@@ -11,6 +11,7 @@ import std.exception;
 import std.conv;
 import std.variant;
 import std.array: Appender;
+import postgres.row;
 
 // TODO: this has to do reference counting,
 // so it doesn't close instances.
@@ -172,7 +173,8 @@ struct Connection
     }
 
     /// Executes a query
-    public void query (string query_string)
+    public void query (string query_string,
+        void delegate(PostgresRow row) row_dg)
     in
     {
         assert(this.state == State.READY_FOR_QUERY);
@@ -196,24 +198,32 @@ struct Connection
 
             // receive rows
             auto value = msg.receiveOne(this);
-            auto row = value.peek!(DataRowMessage);
+            auto raw_row = value.peek!(DataRowMessage);
 
-            while (row)
+            while (raw_row)
             {
-                foreach (i, c; row.columns)
+                PostgresRow row;
+                row.init(rows.fields, raw_row.columns);
+
+                if (row_dg)
                 {
-                    if (rows.fields[i].format == rows.Field.Format.TEXT)
+                    row_dg(row);
+                }
+
+                debug (PrintResults)
+                {
+                    foreach (i, c; raw_row.columns)
                     {
-                        debug (PrintResults)
+                        if (rows.fields[i].format == rows.Field.Format.TEXT)
                         {
-                            writeln(rows.fields[i].name, ": ", c.value);
+                                writeln(rows.fields[i].name, ": ", c.value);
                         }
                     }
                 }
 
                 // receive next
                 value = msg.receiveOne(this);
-                row = value.peek!(DataRowMessage);
+                raw_row = value.peek!(DataRowMessage);
             }
 
             // the last received message is not an DataRowMessage, so
