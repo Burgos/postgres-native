@@ -16,25 +16,19 @@ private struct NameAttribute { const(char)[] name; }
 	return NameAttribute(name);
 }
 
+/// Converts the row into the struct
+public auto ref toStruct(T)(PostgresRow row)
+{
+    T x;
+    // TODO: support tuple via isTuple
+    row.structurise!(T)(x);
+
+    return x;
+}
+
 struct PostgresRow
 {
     import postgres.message;
-
-    /// Converts the row into the struct
-    public auto ref toStruct(T)(ref T x)
-    {
-        // TODO: support tuple via isTuple
-        structurise!(T)(x);
-
-        return x;
-    }
-
-    public auto toStruct(T)()
-    {
-        T x;
-        return toStruct!T(x);
-    }
-
 
 	/// fields description for the row
 	package RowDescriptionMessage.Field[] fields;
