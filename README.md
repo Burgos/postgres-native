@@ -35,7 +35,7 @@ avoided after some initial time.
         });
 
     // Using range interface
-    conn.queryRange("SELECT * FROM comic WHERE id >= 1")
+    conn.queryRange("SELECT * FROM comics WHERE id >= 1")
          .map!(toStruct!Result)
          .filter!(x => x.hero == "Tex Willer").each!writeln;
 ```
