@@ -40,6 +40,6 @@ void main(string[] args)
 
         conn.queryRange("SELECT * FROM stripovi WHERE id >= 1")
             .map!(toStruct!Result)
-            .filter!(x => x.glavni_junak == "Tex Viler").each!(writeln);
+            .filter!(x => x.glavni_junak == "Tex Viler").each!writeln;
     }
 }
