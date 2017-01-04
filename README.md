@@ -38,4 +38,9 @@ avoided after some initial time.
     conn.queryRange("SELECT * FROM comics WHERE id >= 1")
          .map!(toStruct!Result)
          .filter!(x => x.hero == "Tex Willer").each!writeln;
+
+    // Using range interface with extended query
+    conn.queryRange("SELECT * FROM comics WHERE id >= $1", 1)
+         .map!(toStruct!Result)
+         .filter!(x => x.hero == "Tex Willer").each!writeln;
 ```

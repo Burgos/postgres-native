@@ -30,7 +30,6 @@ void main(string[] args)
 
     for(int i = 0; i < num_iterations; i++)
     {
-        conn.query("SELECT * FROM stripovi WHERE id >= $1 and junak = $2", 1, "Zagor");
         conn.query("SELECT * FROM stripovi WHERE id >= 1",
                 (PostgresRow row)
                 {
@@ -41,5 +40,10 @@ void main(string[] args)
         conn.queryRange("SELECT * FROM stripovi WHERE id >= 1")
             .map!(toStruct!Result)
             .filter!(x => x.glavni_junak == "Tex Viler").each!writeln;
+
+        writeln("Extended query");
+        conn.queryRange("SELECT * FROM stripovi WHERE id >= $1", 1)
+            .map!(toStruct!Result)
+            .filter!(x => x.glavni_junak == "Teks Viler").each!writeln;
     }
 }

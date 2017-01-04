@@ -339,7 +339,7 @@ struct Connection
     }
 
     /// Executes a complex query
-    public void query(Args...) (string query_string, Args args)
+    public ResultSet queryRange(Args...) (string query_string, Args args)
     in
     {
         assert(this.state == State.READY_FOR_QUERY);
@@ -397,41 +397,44 @@ struct Connection
 
         if (auto rows = response.peek!(RowDescriptionMessage))
         {
-            debug (verbose) writeln("Got a RowDescription, getting fields");
+            ResultSet set;
 
-            // receive rows
-            auto value = msg.receiveOne(this);
-            auto row = value.peek!(DataRowMessage);
+            postgres.message.Message.ParsedMessage value;
+            postgres.message.DataRowMessage* raw_row;
 
-            while (row)
+            bool getNextRow(ref PostgresRow row)
             {
-                foreach (i, c; row.columns)
-                {
-                    if (rows.fields[i].format == rows.Field.Format.TEXT)
-                    {
-                        debug (PrintResults)
-                        {
-                            writeln(rows.fields[i].name, ": ", c.value);
-                        }
-                    }
-                }
-
-                // receive next
+                // receive row. Receive first time
                 value = msg.receiveOne(this);
-                row = value.peek!(DataRowMessage);
+                raw_row = value.peek!(DataRowMessage);
+
+                if (raw_row)
+                {
+                    row.init(rows.fields, raw_row.columns);
+                    return true;
+                }
+                else
+                {
+                    // the last received message is not an DataRowMessage, so
+                    // keep processing it out of the loop
+                    response = value;
+
+                    enforce(response.peek!(CommandCompleteMessage),
+                            "Expected CommandCompleteMessage");
+
+                    response = msg.receiveOne(this);
+                    enforce(response.peek!(ReadyForQueryMessage),
+                            "Expected ReadyForQueryMessage");
+
+                    return false;
+                }
             }
 
-            // The last one isn't the DataRowMessage, parse
-            // it out the loop
-            response = value;
+            set.getNextRow = &getNextRow;
+            return set;
         }
 
-        enforce(response.peek!(CommandCompleteMessage),
-                "Expected CommandCompleteMessage");
-
-        response = msg.receiveOne(this);
-        enforce(response.peek!(ReadyForQueryMessage),
-                "Expected ReadyForQueryMessage");
+        return ResultSet.init;
     }
 
     /// TODO: move these low-level communication into a substruct
