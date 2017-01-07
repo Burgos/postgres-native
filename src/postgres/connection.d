@@ -24,7 +24,8 @@ struct ResultSet
 
     @property void popFront()
     {
-        this.has_more = this.getNextRow(pg_row);
+        this.has_more = this.getNextRow(*conn, pg_row,
+                parsed_message, response, raw_row);
     }
 
     @property bool empty()
@@ -36,18 +37,32 @@ struct ResultSet
 
         if (!this.initialised)
         {
-            this.has_more = this.getNextRow(pg_row);
+            this.has_more = this.getNextRow(*conn, pg_row,
+                    parsed_message, response, raw_row);
             this.initialised = true;
         }
 
         return !has_more;
     }
 
+    /// Clears the ResultSet
+    package void clear()
+    {
+        this.initialised = false;
+        this.has_more = false;
+    }
+
     private PostgresRow pg_row;
 
-    private bool delegate(ref PostgresRow) getNextRow;
+    private bool function(ref Connection, ref PostgresRow,
+            ref typeof(parsed_message), ref typeof(response),
+            ref typeof(raw_row)) getNextRow;
     private bool has_more;
     private bool initialised;
+    package postgres.message.Message.ParsedMessage parsed_message;
+    package postgres.message.Message.ParsedMessage response;
+    package postgres.message.DataRowMessage* raw_row;
+    package Connection* conn;
 }
 
 
@@ -277,8 +292,11 @@ struct Connection
                 "Expected ReadyForQueryMessage");
     }
 
+    /// ResultSet object for API
+    private ResultSet set;
+
     /// Executes a query and returns range of PostgresRows
-    public ResultSet queryRange (string query_string)
+    public auto ref queryRange (string query_string)
     in
     {
         assert(this.state == State.READY_FOR_QUERY);
@@ -294,19 +312,18 @@ struct Connection
 
         // TODO: make receiveOne static
         this.send(QueryMessage(this.payload_appender, query_string));
-        auto response = msg.receiveOne(this);
+        this.set.response = msg.receiveOne(this);
 
-        if (auto rows = response.peek!(RowDescriptionMessage))
+        if (auto rows = this.set.response.peek!(RowDescriptionMessage))
         {
-            ResultSet set;
-
-            postgres.message.Message.ParsedMessage value;
-            postgres.message.DataRowMessage* raw_row;
-
-            bool getNextRow(ref PostgresRow row)
+            static bool getNextRow(ref Connection conn, ref PostgresRow row,
+                    ref typeof(ResultSet.parsed_message) value,
+                    ref typeof(ResultSet.response) response,
+                    ref typeof(ResultSet.raw_row) raw_row)
             {
+                auto rows = response.peek!(RowDescriptionMessage);
                 // receive row. Receive first time
-                value = msg.receiveOne(this);
+                value = conn.msg.receiveOne(conn);
                 raw_row = value.peek!(DataRowMessage);
 
                 if (raw_row)
@@ -323,7 +340,7 @@ struct Connection
                     enforce(response.peek!(CommandCompleteMessage),
                             "Expected CommandCompleteMessage");
 
-                    response = msg.receiveOne(this);
+                    response = conn.msg.receiveOne(conn);
                     enforce(response.peek!(ReadyForQueryMessage),
                             "Expected ReadyForQueryMessage");
 
@@ -331,11 +348,13 @@ struct Connection
                 }
             }
 
+            set.conn = &this;
             set.getNextRow = &getNextRow;
             return set;
         }
 
-        return ResultSet.init;
+        this.set.clear();
+        return this.set;
     }
 
     /// Executes a complex query
@@ -384,28 +403,26 @@ struct Connection
         this.send(ExecuteMessage(this.payload_appender, execmsg));
         this.send(SyncMessage(this.payload_appender, sync));
 
-        auto response = msg.receiveOne(this);
-        enforce(response.peek!(ParseCompleteMessage),
+        this.set.response = msg.receiveOne(this);
+        enforce(this.set.response.peek!(ParseCompleteMessage),
                 "Expected ParseCompleteMessage");
 
-        response = msg.receiveOne(this);
-        enforce(response.peek!(BindCompleteMessage),
+        this.set.response = msg.receiveOne(this);
+        enforce(this.set.response.peek!(BindCompleteMessage),
                 "Expected BindCompleteMessage");
 
+        this.set.response = msg.receiveOne(this);
 
-        response = msg.receiveOne(this);
-
-        if (auto rows = response.peek!(RowDescriptionMessage))
+        if (auto rows = this.set.response.peek!(RowDescriptionMessage))
         {
-            ResultSet set;
-
-            postgres.message.Message.ParsedMessage value;
-            postgres.message.DataRowMessage* raw_row;
-
-            bool getNextRow(ref PostgresRow row)
+            static bool getNextRow(ref Connection conn, ref PostgresRow row,
+                    ref typeof(ResultSet.parsed_message) value,
+                    ref typeof(ResultSet.response) response,
+                    ref typeof(ResultSet.raw_row) raw_row)
             {
+                auto rows = response.peek!(RowDescriptionMessage);
                 // receive row. Receive first time
-                value = msg.receiveOne(this);
+                value = conn.msg.receiveOne(conn);
                 raw_row = value.peek!(DataRowMessage);
 
                 if (raw_row)
@@ -422,7 +439,7 @@ struct Connection
                     enforce(response.peek!(CommandCompleteMessage),
                             "Expected CommandCompleteMessage");
 
-                    response = msg.receiveOne(this);
+                    response = conn.msg.receiveOne(conn);
                     enforce(response.peek!(ReadyForQueryMessage),
                             "Expected ReadyForQueryMessage");
 
@@ -430,11 +447,13 @@ struct Connection
                 }
             }
 
+            set.conn = &this;
             set.getNextRow = &getNextRow;
             return set;
         }
 
-        return ResultSet.init;
+        this.set.clear();
+        return this.set;
     }
 
     /// TODO: move these low-level communication into a substruct
