@@ -4,3 +4,12 @@ copyright "Copyright (c) 2016 Nemanja Boric"
 authors "Nemanja Boric"
 licence "mit"
 targetPath "bin"
+
+configuration "application" {
+    targetType "executable"
+}
+
+configuration "library" {
+    targetType "library"
+    excludedSourceFiles "source/app.d"
+}
