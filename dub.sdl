@@ -11,5 +11,5 @@ configuration "application" {
 
 configuration "library" {
     targetType "library"
-    excludedSourceFiles "source/app.d"
+    excludedSourceFiles "src/app.d"
 }
