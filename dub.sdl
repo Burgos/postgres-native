@@ -5,11 +5,20 @@ authors "Nemanja Boric"
 licence "mit"
 targetPath "bin"
 
+
 configuration "application" {
+    dependency "vibe-d:core" version="~>0.7.29" optional=true default=true
     targetType "executable"
+    versions "VibeCustomMain"
 }
 
 configuration "library" {
     targetType "library"
     excludedSourceFiles "src/app.d"
+    dependency "vibe-d:core" version="~>0.7.29" optional=true default=true
+}
+
+configuration "phobossockettest" {
+    targetType "executable"
+    dependency "vibe-d:core" version="~>0.7.29" optional=true default=false
 }
