@@ -3,9 +3,9 @@
 module postgres.connection;
 
 import postgres.message;
+import postgres.internal.socket;
 
 import std.bitmanip;
-import std.socket;
 import std.stdio;
 import std.exception;
 import std.conv;
@@ -70,10 +70,11 @@ struct ResultSet
 // so it doesn't close instances.
 struct Connection
 {
-    /// connection socket object
-    private Socket sock;
-    /// remote server address
-    private Address address;
+    /// host to connect to
+    public string host;
+
+    /// port to connect to
+    public ushort port;
 
     /// Username used to connect
     public string username;
@@ -118,35 +119,16 @@ struct Connection
     ///     family = address family of the connection
     public this (string address, ushort port,
             string username, string password,
-            string database,
-            AddressFamily family = AddressFamily.INET)
+            string database)
     {
-        this.sock = new Socket(family, SocketType.STREAM);
+        this.host = address;
+        this.port = port;
         this.username = username;
         this.password = password;
         this.database = database;
 
-        if (family == AddressFamily.INET)
-        {
-            this.address = new InternetAddress(address, port);
-        }
-        else if (family == AddressFamily.INET6)
-        {
-            this.address = new Internet6Address(address, port);
-        }
-        else
-        {
-            throw new Exception("Unsupported family type.");
-        }
-
         const msg_size = 512;
         this.payload_appender.reserve(msg_size);
-    }
-
-    public ~this()
-    {
-        this.sock.shutdown(SocketShutdown.BOTH);
-        this.sock.close();
     }
 
     /// Handles the error message received
@@ -173,7 +155,7 @@ struct Connection
     public void connect()
     {
         enforce(this.state == State.init, "Connection already initialized");
-        this.connect_socket();
+        this.connect_to_server();
 
         // send startup message and wait for the response
         this.send(msg.sendStartup(this.database, this.username));
@@ -456,78 +438,32 @@ struct Connection
         return this.set;
     }
 
-    /// TODO: move these low-level communication into a substruct
-    private void connect_socket()
-    in
-    {
-        assert(this.address !is null);
-    }
-    body
-    {
-        this.sock.connect(this.address);
-        // not supported on OSX
-        version (linux)
-        {
-            this.sock.setKeepAlive(5, 5);
-        }
-    }
+    /// internal socket wrapper around vibed or phobos
+    /// socket
+    private Socket sock;
 
-    /// Receive buffer
-    const chunk_size = 1024;
+    /// convenience wrappers around Socket methods
+    private void connect_to_server ()
+    {
+        this.sock.connect(this.host, this.port);
+    }
 
     /// ditto
-    ubyte[chunk_size] receive_buf;
-
-
     public ptrdiff_t receive (ref Appender!(ubyte[]) app,
             size_t bytes_need)
     {
-        ptrdiff_t received = 0;
-
-        while (received < bytes_need)
-        {
-            auto need = bytes_need - received;
-            auto recv = need > chunk_size ? chunk_size : need;
-
-            auto ret = this.sock.receive(this.receive_buf[0..need]);
-
-            if (ret == Socket.ERROR)
-            {
-                writeln("Failed to receive from socket: ", this.sock.getErrorText());
-                return ret;
-            }
-
-            app.put(this.receive_buf[0..need]);
-
-            received += need;
-        }
-
-        return received;
+        return this.sock.receive(app, bytes_need);
     }
 
+    /// ditto
     public ptrdiff_t receive(T) (ref T t)
     {
-        ubyte[T.sizeof] buf;
-        auto ret = this.sock.receive(buf);
-
-        if (ret == Socket.ERROR)
-        {
-            writeln("Failed to receive from socket: ", this.sock.getErrorText());
-            return ret;
-        }
-
-        t = bigEndianToNative!(T, T.sizeof)(buf);
-        return ret;
+        return this.sock.receive!(T)(t);
     }
 
-    public ptrdiff_t send (void[] buf)
+    /// ditto
+    public void send (ubyte[] data)
     {
-        debug (verbose)
-        {
-            writeln("Raw bytes: ", buf);
-            writeln("As strings: ", cast(char[])buf);
-        }
-
-        return this.sock.send(buf);
+        this.sock.send(data);
     }
 }
