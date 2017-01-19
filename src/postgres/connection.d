@@ -107,6 +107,14 @@ struct Connection
     /// Message parse buffer
     Message msg;
 
+    public void ensureConnected()
+    {
+        if (this.state == State.INITIALIZING)
+        {
+            this.connect();
+        }
+    }
+
     @disable this();
 
     /// Creates the connection object.
