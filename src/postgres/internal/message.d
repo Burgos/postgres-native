@@ -165,7 +165,7 @@ struct Message
         // message type
         if (type != char.init)
         {
-            app.append(type);
+            app.put(type);
         }
 
         // dummy length
@@ -334,14 +334,17 @@ struct Md5PasswordMessage
     unittest
     {
         ubyte[] buf;
-        Md5PasswordMessage(app, "burgos", "test-pass", [0x91, 0x47, 0x28, 0x72]);
+        Appender!(ubyte[]) app;
+
+        buf = Md5PasswordMessage.constructMessage(
+                app, "burgos", "test-pass", [0x91, 0x47, 0x28, 0x72]);
 
         ubyte[] expected = [0x70, 0x00, 0x00, 0x00, 0x28, 0x6d, 0x64, 0x35,
             0x37, 0x35, 0x33, 0x65, 0x62, 0x31, 0x64, 0x31, 0x36, 0x38, 0x39,
             0x32, 0x32, 0x32, 0x35, 0x37, 0x37, 0x39, 0x31, 0x32, 0x35, 0x63,
             0x32, 0x39, 0x66, 0x39, 0x62, 0x30, 0x32, 0x34, 0x37, 0x64, 0x00];
 
-        assert (app == expected);
+        assert (buf == expected);
     }
 }
 
@@ -917,8 +920,8 @@ struct BindMessage
 
         msg.num_parameter_values = 2;
 
-        auto v1 = LengthArray(0, Nullable!(ubyte[])(cast(ubyte[])[1, 2, 3, 4]));
-        auto v2 = LengthArray(0, Nullable!(ubyte[])(cast(ubyte[])[2, 3, 4, 5]));
+        auto v1 = LengthArray(Nullable!(ubyte[])(cast(ubyte[])[1, 2, 3, 4]));
+        auto v2 = LengthArray(Nullable!(ubyte[])(cast(ubyte[])[2, 3, 4, 5]));
 
         msg.parameter_values = [v1, v2];
 
@@ -927,13 +930,14 @@ struct BindMessage
             FormatCodes.TEXT];
 
         ubyte[] buf;
-        BindMessage(app, msg);
+        Appender!(ubyte[]) app;
+        buf = BindMessage.constructMessage(app, msg);
 
-        assert(app[0] == cast(ubyte)BindMessage.Tag);
-        assert(app[5] == msg.dest_portal_name.representation[0]);
-        assert(app[6] == 0);
-        assert(app[7] == msg.source_prep_stmt_name.representation[0]);
-        assert(app[8] == 0);
+        assert(buf[0] == cast(ubyte)BindMessage.Tag);
+        assert(buf[5] == msg.dest_portal_name.representation[0]);
+        assert(buf[6] == 0);
+        assert(buf[7] == msg.source_prep_stmt_name.representation[0]);
+        assert(buf[8] == 0);
 
         auto r = buf[9..$];
         assert(read!short(r) == msg.num_format_codes);
