@@ -2,8 +2,7 @@ module app;
 
 void run_test(int num_iterations)
 {
-    import postgres.connection;
-    import postgres.row;
+    import postgres;
     import std.stdio;
     import std.conv;
     import std.algorithm;
