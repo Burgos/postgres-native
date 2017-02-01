@@ -328,16 +328,6 @@ struct Md5PasswordMessage
         return app.data;
     }
 
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        import std.exception;
-        // not supported
-        enforce(false, "Parsing Md5PasswordMessage is not supported");
-        assert(false);
-    }
-
     unittest
     {
         ubyte[] buf;
@@ -571,14 +561,6 @@ struct QueryMessage
     static ubyte[] opCall(ref Appender!(ubyte[]) app, string query)
     {
         return Message.constructMessage(app, Tag, query);
-    }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing MessageQuery is not supported");
     }
 }
 
@@ -850,14 +832,6 @@ struct ParseMessage
                 msg.num_data_types);
                 //0);///msg.data_types);*/
     }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing ParseMessage is not supported");
-    }
 }
 
 /// Bind message. Sent to the backend binding data for each placeholder
@@ -974,14 +948,6 @@ struct BindMessage
         assert(read!ushort(r) == FormatCodes.BINARY);
         assert(read!ushort(r) == FormatCodes.TEXT);
     }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing BindMessage is not supported");
-    }
 }
 
 /// Parse completed
@@ -1048,14 +1014,6 @@ struct DescribeMessage
                 msg.type,
                 msg.name);
     }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing ExecuteMessage is not supported");
-    }
 }
 
 /// Execute message. Starts the extended query
@@ -1081,14 +1039,6 @@ struct ExecuteMessage
         return Message.constructMessage(app, Tag,
                 msg.portal_name,
                 msg.max_rows);
-    }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing ExecuteMessage is not supported");
     }
 }
 
@@ -1136,13 +1086,5 @@ struct SyncMessage
     static ubyte[] opCall(ref Appender!(ubyte[]) app, SyncMessage msg)
     {
         return Message.constructMessage(app, Tag);
-    }
-
-    /// Dummy opCall, needed to satisfy message-generic
-    /// opCall call.
-    static typeof(this) opCall(ubyte[])
-    {
-        // not supported
-        assert(false, "Parsing SyncMessage is not supported");
     }
 }
