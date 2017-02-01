@@ -308,12 +308,15 @@ struct Md5PasswordMessage
 
     /// Constructs a MD5 password responde message
     /// using the given password and salt
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, string username, string password, int salt)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app,
+            string username, string password, int salt)
     {
-        return Md5PasswordMessage(app, username, password, (cast(ubyte*)&salt)[0..int.sizeof]);
+        return Md5PasswordMessage.constructMessage(app, username, password,
+                (cast(ubyte*)&salt)[0..int.sizeof]);
     }
 
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, string username, string password, ubyte[] salt)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app,
+            string username, string password, ubyte[] salt)
     {
         ubyte[32 + 4] hash_buf; // md5+password string
 
@@ -558,7 +561,7 @@ struct QueryMessage
 
     /// Constructs a query message using the
     /// query string
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, string query)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, string query)
     {
         return Message.constructMessage(app, Tag, query);
     }
@@ -824,7 +827,7 @@ struct ParseMessage
     public TypeOID[] data_types = [TypeOID.NOT_SPECIFIED];
 
     /// Constructs a Parse message
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, ParseMessage msg)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, ParseMessage msg)
     {
         return Message.constructMessage(app, Tag,
                 msg.prepared_statement_name,
@@ -887,7 +890,7 @@ struct BindMessage
     public FormatCodes[] result_format_codes;
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, BindMessage msg)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, BindMessage msg)
     {
         return Message.constructMessage(app, Tag,
                 msg.dest_portal_name,
@@ -1008,7 +1011,7 @@ struct DescribeMessage
 
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, DescribeMessage msg)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, DescribeMessage msg)
     {
         return Message.constructMessage(app, Tag,
                 msg.type,
@@ -1034,7 +1037,7 @@ struct ExecuteMessage
 
 
     /// Constructs a Bind message
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, ExecuteMessage msg)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, ExecuteMessage msg)
     {
         return Message.constructMessage(app, Tag,
                 msg.portal_name,
@@ -1083,7 +1086,7 @@ struct SyncMessage
     enum origin = Origin.FRONTEND;
 
     /// Constructs a Sync message
-    static ubyte[] opCall(ref Appender!(ubyte[]) app, SyncMessage msg)
+    static ubyte[] constructMessage(ref Appender!(ubyte[]) app, SyncMessage msg)
     {
         return Message.constructMessage(app, Tag);
     }

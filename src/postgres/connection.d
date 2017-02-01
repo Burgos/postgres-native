@@ -177,7 +177,7 @@ struct Connection
         {
             if (auth_msg.format == AuthenticationMessage.AuthFormat.MD5PASS)
             {
-                this.send(Md5PasswordMessage(this.payload_appender, this.username,
+                this.send(Md5PasswordMessage.constructMessage(this.payload_appender, this.username,
                             this.password, auth_msg.salt.md5_salt));
             }
             else
@@ -232,7 +232,7 @@ struct Connection
             ReadyForQueryMessage;
 
         // TODO: make receiveOne static
-        this.send(QueryMessage(this.payload_appender, query_string));
+        this.send(QueryMessage.constructMessage(this.payload_appender, query_string));
         auto response = msg.receiveOne(this);
 
         if (auto rows = response.peek!(RowDescriptionMessage))
@@ -301,7 +301,7 @@ struct Connection
             ReadyForQueryMessage;
 
         // TODO: make receiveOne static
-        this.send(QueryMessage(this.payload_appender, query_string));
+        this.send(QueryMessage.constructMessage(this.payload_appender, query_string));
         this.set.response = msg.receiveOne(this);
 
         if (auto rows = this.set.response.peek!(RowDescriptionMessage))
@@ -387,11 +387,11 @@ struct Connection
         SyncMessage sync;
         parsemsg.query_string = query_string;
 
-        this.send(ParseMessage(this.payload_appender, parsemsg));
-        this.send(BindMessage(this.payload_appender, bindmsg));
-        this.send(DescribeMessage(this.payload_appender, describemsg));
-        this.send(ExecuteMessage(this.payload_appender, execmsg));
-        this.send(SyncMessage(this.payload_appender, sync));
+        this.send(ParseMessage.constructMessage(this.payload_appender, parsemsg));
+        this.send(BindMessage.constructMessage(this.payload_appender, bindmsg));
+        this.send(DescribeMessage.constructMessage(this.payload_appender, describemsg));
+        this.send(ExecuteMessage.constructMessage(this.payload_appender, execmsg));
+        this.send(SyncMessage.constructMessage(this.payload_appender, sync));
 
         this.set.response = msg.receiveOne(this);
         enforce(this.set.response.peek!(ParseCompleteMessage),
