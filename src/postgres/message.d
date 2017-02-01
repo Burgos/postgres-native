@@ -107,7 +107,7 @@ struct Message
             {
                 static if (msg_type.origin == Origin.BACKEND)
                 {
-                    mixin("ret = this.msg_" ~ msg_type.stringof ~ "(this.payload_app.data);");
+                    mixin("ret = this.msg_" ~ msg_type.stringof ~ ".parse(this.payload_app.data);");
                 }
             }
         }
@@ -273,7 +273,7 @@ struct AuthenticationMessage
 
     /// Constructs an auth. message from the given
     /// payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.format = cast(AuthFormat)read!int(payload);
 
@@ -370,7 +370,7 @@ struct ParameterStatusMessage
 
     /// generates parameter status message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         import std.algorithm.iteration: splitter;
         auto params = splitter(payload, cast(ubyte)0);
@@ -399,7 +399,7 @@ struct BackendKeyDataMessage
 
     /// generates parameter status message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.process_id = read!int(payload);
         this.key = read!int(payload);
@@ -427,7 +427,7 @@ struct ReadyForQueryMessage
 
     /// generates parameter status message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.transaction_status = read!char(payload);
         debug (verbose) writeln("transaction status: ", this.transaction_status);
@@ -463,7 +463,7 @@ struct CloseMessage
 
     /// generates Close message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.type = read!Type(payload);
         this.name = to!string(cast(char[])payload.array);
@@ -520,7 +520,7 @@ struct ErrorMessage
 
     /// generates error message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         import std.algorithm.iteration: splitter;
 
@@ -643,7 +643,7 @@ struct RowDescriptionMessage
 
     /// generates RowDescription message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.number_of_fields = read!short(payload);
 
@@ -727,7 +727,7 @@ struct DataRowMessage
 
     /// generates RowDescription message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         this.number_of_columns = read!short(payload);
 
@@ -996,7 +996,7 @@ struct ParseCompleteMessage
 
     /// generates parameter status message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         return this;
     }
@@ -1013,7 +1013,7 @@ struct BindCompleteMessage
 
     /// generates parameter status message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         return this;
     }
@@ -1115,7 +1115,7 @@ struct CommandCompleteMessage
 
     /// generates RowDescription message
     /// out of payload
-    auto opCall(Range)(Range payload)
+    auto parse(Range)(Range payload)
     {
         import std.algorithm.searching: until;
         this.raw_tag.clear();
